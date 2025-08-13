@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>사주로 만나는 행운의 번호</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Nanum+Myeongjo:wght@400;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- 헤더 -->
+        <header class="header">
+            <div class="title-container">
+                <h1 class="main-title">사주로 만나는 행운의 번호</h1>
+                <p class="subtitle">운명의 기운을 담은 특별한 번호</p>
+            </div>
+            <div class="bagua-decoration"></div>
+        </header>
+
+        <!-- 메인 컨텐츠 -->
+        <main class="main-content">
+            <!-- 사주 입력 영역 -->
+            <section class="input-section">
+                <div class="form-container">
+                    <h2 class="section-title">사주정보 입력</h2>
+                    
+                    <form id="saju-form" class="saju-form">
+                        <!-- 생년월일 입력 -->
+                        <div class="form-group">
+                            <label for="birth-date" class="form-label">생년월일</label>
+                            <div class="date-input-container">
+                                <input type="date" id="birth-date" name="birth-date" required class="form-input date-input">
+                                <div class="calendar-type">
+                                    <label class="radio-label">
+                                        <input type="radio" name="calendar-type" value="solar" checked>
+                                        <span class="radio-custom"></span>
+                                        양력
+                                    </label>
+                                    <label class="radio-label">
+                                        <input type="radio" name="calendar-type" value="lunar">
+                                        <span class="radio-custom"></span>
+                                        음력
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 출생시간 선택 -->
+                        <div class="form-group">
+                            <label for="birth-time" class="form-label">출생시간</label>
+                            <select id="birth-time" name="birth-time" required class="form-input select-input">
+                                <option value="">시간을 선택해주세요</option>
+                                <option value="23">자시 (子時) - 23:00~00:59</option>
+                                <option value="1">축시 (丑時) - 01:00~02:59</option>
+                                <option value="3">인시 (寅時) - 03:00~04:59</option>
+                                <option value="5">묘시 (卯時) - 05:00~06:59</option>
+                                <option value="7">진시 (辰時) - 07:00~08:59</option>
+                                <option value="9">사시 (巳時) - 09:00~10:59</option>
+                                <option value="11">오시 (午時) - 11:00~12:59</option>
+                                <option value="13">미시 (未時) - 13:00~14:59</option>
+                                <option value="15">신시 (申時) - 15:00~16:59</option>
+                                <option value="17">유시 (酉時) - 17:00~18:59</option>
+                                <option value="19">술시 (戌時) - 19:00~20:59</option>
+                                <option value="21">해시 (亥時) - 21:00~22:59</option>
+                            </select>
+                        </div>
+
+                        <!-- 성별 선택 -->
+                        <div class="form-group">
+                            <label class="form-label">성별</label>
+                            <div class="gender-selection">
+                                <label class="radio-label gender-label">
+                                    <input type="radio" name="gender" value="male" required>
+                                    <span class="radio-custom"></span>
+                                    <span class="gender-text">남성 (乾)</span>
+                                </label>
+                                <label class="radio-label gender-label">
+                                    <input type="radio" name="gender" value="female" required>
+                                    <span class="radio-custom"></span>
+                                    <span class="gender-text">여성 (坤)</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- 생성 버튼 -->
+                        <button type="submit" class="generate-btn">
+                            <span class="btn-text">운명의 번호 생성</span>
+                            <div class="btn-decoration"></div>
+                        </button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- 결과 표시 영역 -->
+            <section id="result-section" class="result-section hidden">
+                <div class="result-container">
+                    <h2 class="result-title">당신의 운명 번호</h2>
+                    <div class="saju-info">
+                        <h3>사주팔자</h3>
+                        <div id="saju-display" class="saju-display"></div>
+                    </div>
+                    <div class="lotto-numbers">
+                        <h3>행운의 로또 번호</h3>
+                        <div id="numbers-display" class="numbers-display">
+                            <div class="number-balls"></div>
+                        </div>
+                        <div class="numbers-explanation">
+                            <p id="explanation-text"></p>
+                        </div>
+                    </div>
+                    <button type="button" class="regenerate-btn" onclick="generateNewNumbers()">
+                        새로운 번호 생성
+                    </button>
+                </div>
+            </section>
+        </main>
+
+        <!-- 푸터 -->
+        <footer class="footer">
+            <p>&copy; 2024 사주 로또 번호 생성기. 모든 권리 보유.</p>
+            <p class="disclaimer">※ 본 서비스는 오락 목적으로 제작되었으며, 실제 당첨을 보장하지 않습니다.</p>
+        </footer>
+    </div>
+
+    <!-- 로딩 오버레이 -->
+    <div id="loading-overlay" class="loading-overlay hidden">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <p>운명의 기운을 읽고 있습니다...</p>
+        </div>
+    </div>
+
+    <script src="saju-engine.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
