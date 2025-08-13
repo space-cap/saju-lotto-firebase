@@ -335,6 +335,198 @@ body {
     line-height: 1.8;
 }
 
+/* 사주명반 스타일 */
+.pillar-container {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+    max-width: 500px;
+    margin: 0 auto;
+    padding: 20px;
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    border-radius: 15px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.pillar {
+    text-align: center;
+    border: 2px solid var(--border-color);
+    border-radius: 12px;
+    padding: 15px 10px;
+    background: white;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.pillar:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+}
+
+.pillar-title {
+    font-size: 0.9rem;
+    color: var(--wood-color);
+    margin-bottom: 10px;
+    font-weight: 600;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.pillar-content {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.pillar-stem {
+    font-family: 'Nanum Myeongjo', serif;
+    font-size: 1.3rem;
+    font-weight: 700;
+    padding: 8px;
+    border-radius: 8px;
+    color: white;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+    position: relative;
+}
+
+.pillar-branch {
+    font-family: 'Nanum Myeongjo', serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+    padding: 6px;
+    border-radius: 6px;
+    color: white;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* 오행별 색상 */
+.element-wood { background: linear-gradient(135deg, var(--wood-color), #228B22); }
+.element-fire { background: linear-gradient(135deg, var(--fire-color), #B22222); }
+.element-earth { background: linear-gradient(135deg, var(--earth-color), #B8860B); }
+.element-metal { background: linear-gradient(135deg, #C0C0C0, #A9A9A9); color: #333 !important; }
+.element-water { background: linear-gradient(135deg, var(--water-color), #000080); }
+
+/* 사주 해석 영역 */
+.saju-interpretation {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    margin-top: 20px;
+    border: 1px solid var(--border-color);
+}
+
+.interpretation-section {
+    margin-bottom: 15px;
+    padding: 12px;
+    background: var(--light-gray);
+    border-radius: 8px;
+    border-left: 4px solid var(--wood-color);
+}
+
+.interpretation-title {
+    font-weight: 600;
+    color: var(--water-color);
+    margin-bottom: 5px;
+    font-size: 1rem;
+}
+
+.interpretation-content {
+    color: #666;
+    line-height: 1.6;
+    font-size: 0.95rem;
+}
+
+/* 오행 분석 차트 */
+.element-analysis {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+    margin: 15px 0;
+    padding: 15px;
+    background: white;
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+}
+
+.element-item {
+    text-align: center;
+    padding: 10px 5px;
+    border-radius: 8px;
+    background: var(--light-gray);
+    transition: all 0.3s ease;
+}
+
+.element-item:hover {
+    transform: scale(1.05);
+}
+
+.element-name {
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 5px;
+    color: var(--water-color);
+}
+
+.element-strength {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: white;
+    padding: 5px;
+    border-radius: 5px;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+    .pillar-container {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+        padding: 15px;
+    }
+    
+    .pillar {
+        padding: 12px 8px;
+    }
+    
+    .pillar-stem {
+        font-size: 1.1rem;
+        padding: 6px;
+    }
+    
+    .pillar-branch {
+        font-size: 1rem;
+        padding: 5px;
+    }
+    
+    .element-analysis {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+    }
+}
+
+@media (max-width: 480px) {
+    .pillar-container {
+        gap: 10px;
+        padding: 12px;
+    }
+    
+    .pillar-title {
+        font-size: 0.8rem;
+    }
+    
+    .pillar-stem {
+        font-size: 1rem;
+    }
+    
+    .pillar-branch {
+        font-size: 0.9rem;
+    }
+    
+    .element-analysis {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
 .lotto-numbers {
     text-align: center;
     margin-bottom: 30px;

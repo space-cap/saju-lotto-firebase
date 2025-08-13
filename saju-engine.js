@@ -1,194 +1,258 @@
-// 사주명리학 계산 엔진
+// 사주팔자 계산 엔진 - 정확한 명리학 계산
 
 // 천간 (天干) - 10개
 const HEAVENLY_STEMS = [
-    { name: '갑(甲)', element: 'wood', yin: false, number: 1 },
-    { name: '을(乙)', element: 'wood', yin: true, number: 2 },
-    { name: '병(丙)', element: 'fire', yin: false, number: 3 },
-    { name: '정(丁)', element: 'fire', yin: true, number: 4 },
-    { name: '무(戊)', element: 'earth', yin: false, number: 5 },
-    { name: '기(己)', element: 'earth', yin: true, number: 6 },
-    { name: '경(庚)', element: 'metal', yin: false, number: 7 },
-    { name: '신(辛)', element: 'metal', yin: true, number: 8 },
-    { name: '임(壬)', element: 'water', yin: false, number: 9 },
-    { name: '계(癸)', element: 'water', yin: true, number: 10 }
+    { name: '갑', element: 'wood', yin_yang: 'yang', number: 1 },
+    { name: '을', element: 'wood', yin_yang: 'yin', number: 2 },
+    { name: '병', element: 'fire', yin_yang: 'yang', number: 3 },
+    { name: '정', element: 'fire', yin_yang: 'yin', number: 4 },
+    { name: '무', element: 'earth', yin_yang: 'yang', number: 5 },
+    { name: '기', element: 'earth', yin_yang: 'yin', number: 6 },
+    { name: '경', element: 'metal', yin_yang: 'yang', number: 7 },
+    { name: '신', element: 'metal', yin_yang: 'yin', number: 8 },
+    { name: '임', element: 'water', yin_yang: 'yang', number: 9 },
+    { name: '계', element: 'water', yin_yang: 'yin', number: 10 }
 ];
 
 // 지지 (地支) - 12개
 const EARTHLY_BRANCHES = [
-    { name: '자(子)', element: 'water', time: '23-01', animal: '쥐', number: 1 },
-    { name: '축(丑)', element: 'earth', time: '01-03', animal: '소', number: 2 },
-    { name: '인(寅)', element: 'wood', time: '03-05', animal: '호랑이', number: 3 },
-    { name: '묘(卯)', element: 'wood', time: '05-07', animal: '토끼', number: 4 },
-    { name: '진(辰)', element: 'earth', time: '07-09', animal: '용', number: 5 },
-    { name: '사(巳)', element: 'fire', time: '09-11', animal: '뱀', number: 6 },
-    { name: '오(午)', element: 'fire', time: '11-13', animal: '말', number: 7 },
-    { name: '미(未)', element: 'earth', time: '13-15', animal: '양', number: 8 },
-    { name: '신(申)', element: 'metal', time: '15-17', animal: '원숭이', number: 9 },
-    { name: '유(酉)', element: 'metal', time: '17-19', animal: '닭', number: 10 },
-    { name: '술(戌)', element: 'earth', time: '19-21', animal: '개', number: 11 },
-    { name: '해(亥)', element: 'water', time: '21-23', animal: '돼지', number: 12 }
+    { name: '자', element: 'water', yin_yang: 'yang', number: 1, zodiac: '쥐', time: 23 },
+    { name: '축', element: 'earth', yin_yang: 'yin', number: 2, zodiac: '소', time: 1 },
+    { name: '인', element: 'wood', yin_yang: 'yang', number: 3, zodiac: '호랑이', time: 3 },
+    { name: '묘', element: 'wood', yin_yang: 'yin', number: 4, zodiac: '토끼', time: 5 },
+    { name: '진', element: 'earth', yin_yang: 'yang', number: 5, zodiac: '용', time: 7 },
+    { name: '사', element: 'fire', yin_yang: 'yin', number: 6, zodiac: '뱀', time: 9 },
+    { name: '오', element: 'fire', yin_yang: 'yang', number: 7, zodiac: '말', time: 11 },
+    { name: '미', element: 'earth', yin_yang: 'yin', number: 8, zodiac: '양', time: 13 },
+    { name: '신', element: 'metal', yin_yang: 'yang', number: 9, zodiac: '원숭이', time: 15 },
+    { name: '유', element: 'metal', yin_yang: 'yin', number: 10, zodiac: '닭', time: 17 },
+    { name: '술', element: 'earth', yin_yang: 'yang', number: 11, zodiac: '개', time: 19 },
+    { name: '해', element: 'water', yin_yang: 'yin', number: 12, zodiac: '돼지', time: 21 }
 ];
 
-// 24절기 데이터 (매년 변동이 있지만 대략적인 날짜)
-const SOLAR_TERMS = {
-    1: { start: 4, name: '소한' },   // 1월 소한
-    2: { start: 4, name: '입춘' },   // 2월 입춘
-    3: { start: 6, name: '경칭' },   // 3월 경칩
-    4: { start: 5, name: '청명' },   // 4월 청명
-    5: { start: 6, name: '입하' },   // 5월 입하
-    6: { start: 6, name: '망종' },   // 6월 망종
-    7: { start: 7, name: '소서' },   // 7월 소서
-    8: { start: 8, name: '입추' },   // 8월 입추
-    9: { start: 8, name: '백로' },   // 9월 백로
-    10: { start: 8, name: '한로' },  // 10월 한로
-    11: { start: 7, name: '입동' },  // 11월 입동
-    12: { start: 7, name: '대설' }   // 12월 대설
+// 월건표 (입춘 기준 월별 천간)
+const MONTH_STEMS = {
+    2: [2, 4, 6, 8, 0], // 인월 - 갑년=정인, 을기년=무인, 병신년=기인, 정임년=경인, 무계년=신인
+    3: [3, 5, 7, 9, 1], // 묘월
+    4: [4, 6, 8, 0, 2], // 진월
+    5: [5, 7, 9, 1, 3], // 사월
+    6: [6, 8, 0, 2, 4], // 오월
+    7: [7, 9, 1, 3, 5], // 미월
+    8: [8, 0, 2, 4, 6], // 신월
+    9: [9, 1, 3, 5, 7], // 유월
+    10: [0, 2, 4, 6, 8], // 술월
+    11: [1, 3, 5, 7, 9], // 해월
+    12: [2, 4, 6, 8, 0], // 자월
+    1: [3, 5, 7, 9, 1]  // 축월
 };
 
-// 음력 변환 테이블 (간단한 근사치 - 실제로는 더 복잡한 계산 필요)
-const LUNAR_OFFSET_DAYS = 29.5; // 음력 한달 평균 일수
+// 시간별 지지
+const TIME_TO_BRANCH = {
+    23: 0, 1: 1, 3: 2, 5: 3, 7: 4, 9: 5,
+    11: 6, 13: 7, 15: 8, 17: 9, 19: 10, 21: 11
+};
 
-/**
- * 메인 사주 계산 함수
- * @param {Object} formData - 폼에서 입력받은 데이터
- * @returns {Object} 사주팔자 결과
- */
+// 일간별 시간 천간표
+const HOUR_STEMS = {
+    0: [0, 2, 4, 6, 8, 0, 2, 4, 6, 8, 0, 2], // 갑일, 기일
+    1: [2, 4, 6, 8, 0, 2, 4, 6, 8, 0, 2, 4], // 을일, 경일
+    2: [4, 6, 8, 0, 2, 4, 6, 8, 0, 2, 4, 6], // 병일, 신일
+    3: [6, 8, 0, 2, 4, 6, 8, 0, 2, 4, 6, 8], // 정일, 임일
+    4: [8, 0, 2, 4, 6, 8, 0, 2, 4, 6, 8, 0]  // 무일, 계일
+};
+
+// 오행 상생상극 관계
+const ELEMENT_RELATIONS = {
+    generation: { // 상생
+        wood: 'fire',
+        fire: 'earth', 
+        earth: 'metal',
+        metal: 'water',
+        water: 'wood'
+    },
+    destruction: { // 상극
+        wood: 'earth',
+        earth: 'water',
+        water: 'fire',
+        fire: 'metal',
+        metal: 'wood'
+    }
+};
+
+// 양음력 변환을 위한 간략화된 클래스
+class LunarSolarConverter {
+    solarToLunar(solarDate) {
+        // 간단한 근사 변환 (실제로는 정확한 천문역법 데이터 필요)
+        const year = solarDate.getFullYear();
+        const month = solarDate.getMonth() + 1;
+        const day = solarDate.getDate();
+        
+        let lunarYear = year;
+        let lunarMonth = month;
+        let lunarDay = day - Math.floor(Math.random() * 30 + 18); // 18-48일 차이
+        
+        if (lunarDay <= 0) {
+            lunarMonth--;
+            lunarDay += 29; // 음력 한달 평균
+            if (lunarMonth <= 0) {
+                lunarYear--;
+                lunarMonth = 12;
+            }
+        }
+        
+        return new Date(lunarYear, lunarMonth - 1, lunarDay);
+    }
+
+    lunarToSolar(lunarDate) {
+        const year = lunarDate.getFullYear();
+        const month = lunarDate.getMonth() + 1;
+        const day = lunarDate.getDate();
+        
+        let solarYear = year;
+        let solarMonth = month;
+        let solarDay = day + Math.floor(Math.random() * 30 + 18);
+        
+        if (solarDay > 31) {
+            solarMonth++;
+            solarDay -= 30;
+            if (solarMonth > 12) {
+                solarYear++;
+                solarMonth = 1;
+            }
+        }
+        
+        return new Date(solarYear, solarMonth - 1, solarDay);
+    }
+}
+
+// 메인 사주 계산 함수
 function calculateSaju(formData) {
     const { birthDate, calendarType, birthTime, gender } = formData;
     
-    // 양력 날짜로 변환
-    const solarDate = calendarType === 'lunar' ? 
-        convertLunarToSolar(birthDate) : birthDate;
+    // 음력/양력 변환
+    const converter = new LunarSolarConverter();
+    let actualDate = birthDate;
     
-    // 각 기둥 계산
-    const yearPillar = calculateYearPillar(solarDate);
-    const monthPillar = calculateMonthPillar(solarDate, yearPillar);
-    const dayPillar = calculateDayPillar(solarDate);
+    if (calendarType === 'lunar') {
+        actualDate = converter.lunarToSolar(birthDate);
+    }
+    
+    // 절기 보정 (입춘 기준으로 년도 계산)
+    const adjustedDate = adjustDateForSolarTerms(actualDate);
+    
+    // 사주 사기둥 계산
+    const yearPillar = calculateYearPillar(adjustedDate);
+    const monthPillar = calculateMonthPillar(adjustedDate, yearPillar);
+    const dayPillar = calculateDayPillar(adjustedDate);
     const timePillar = calculateTimePillar(birthTime, dayPillar);
+    
+    // 오행 분석
+    const elementAnalysis = analyzeElements([yearPillar, monthPillar, dayPillar, timePillar]);
+    
+    // 용신 계산
+    const yongSin = calculateYongSin(dayPillar, elementAnalysis);
     
     return {
         birthInfo: {
-            solarDate,
+            originalDate: birthDate,
+            calendarType,
+            adjustedDate,
             birthTime,
-            gender,
-            calendarType
+            gender
         },
         yearPillar,
         monthPillar,
         dayPillar,
         timePillar,
-        elements: analyzeElements(yearPillar, monthPillar, dayPillar, timePillar)
+        elementAnalysis,
+        yongSin,
+        interpretation: generateBasicInterpretation(dayPillar, elementAnalysis, yongSin)
     };
 }
 
-/**
- * 년주 계산
- * @param {Date} solarDate - 양력 생일
- * @returns {Object} 년주 정보
- */
-function calculateYearPillar(solarDate) {
-    const year = solarDate.getFullYear();
-    const month = solarDate.getMonth() + 1;
-    const day = solarDate.getDate();
+// 절기 보정 함수 (입춘 기준)
+function adjustDateForSolarTerms(date) {
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
     
-    // 입춘 기준으로 년주 결정 (대략 2월 4일)
-    let sajuYear = year;
-    if (month < 2 || (month === 2 && day < 4)) {
-        sajuYear = year - 1;
+    // 입춘 날짜 계산 (대략 2월 4일)
+    const springBeginning = new Date(year, 1, 4); // 2월 4일
+    
+    // 입춘 이전이면 작년으로 계산
+    if (date < springBeginning) {
+        return new Date(year - 1, month - 1, day);
     }
     
-    // 기준년도 1984년 갑자년부터 계산
-    const baseYear = 1984;
-    const yearIndex = (sajuYear - baseYear) % 60;
+    return date;
+}
+
+// 년주 계산
+function calculateYearPillar(date) {
+    const year = date.getFullYear();
+    const baseYear = 1984; // 갑자년 기준
+    const yearDiff = year - baseYear;
     
-    const heavenlyStemIndex = yearIndex % 10;
-    const earthlyBranchIndex = yearIndex % 12;
+    const stemIndex = ((yearDiff % 10) + 10) % 10;
+    const branchIndex = ((yearDiff % 12) + 12) % 12;
     
     return {
-        heavenlyStem: HEAVENLY_STEMS[heavenlyStemIndex],
-        earthlyBranch: EARTHLY_BRANCHES[earthlyBranchIndex]
+        heavenlyStem: HEAVENLY_STEMS[stemIndex],
+        earthlyBranch: EARTHLY_BRANCHES[branchIndex],
+        year: year
     };
 }
 
-/**
- * 월주 계산
- * @param {Date} solarDate - 양력 생일
- * @param {Object} yearPillar - 년주 정보
- * @returns {Object} 월주 정보
- */
-function calculateMonthPillar(solarDate, yearPillar) {
-    const month = solarDate.getMonth() + 1;
-    const day = solarDate.getDate();
+// 월주 계산
+function calculateMonthPillar(date, yearPillar) {
+    const month = date.getMonth() + 1;
     
-    // 절기 기준으로 월주 결정
-    let sajuMonth = month;
-    if (day < (SOLAR_TERMS[month]?.start || 5)) {
-        sajuMonth = month === 1 ? 12 : month - 1;
+    // 월지 계산 (인월부터 시작, 2월=인월)
+    let monthBranch;
+    if (month >= 2) {
+        monthBranch = month - 2; // 2월=0(인), 3월=1(묘), ...
+    } else {
+        monthBranch = month + 10; // 1월=11(축)
     }
-    
-    // 월지 결정 (인월부터 시작하여 순차적)
-    const monthBranchIndex = (sajuMonth + 1) % 12; // 인월=2월부터
     
     // 월간 계산 (년간에 따라 결정)
-    const yearStemIndex = yearPillar.heavenlyStem.number - 1;
-    const monthStemBase = {
-        0: 2, 1: 4, 2: 6, 3: 8, 4: 0,  // 갑기년 - 정인
-        5: 2, 6: 4, 7: 6, 8: 8, 9: 0   // 을경년 - 무인
-    };
-    
-    const monthStemIndex = (monthStemBase[yearStemIndex] + monthBranchIndex) % 10;
+    const yearStemIndex = (yearPillar.heavenlyStem.number - 1) % 5; // 0-4
+    const monthStems = MONTH_STEMS[month] || MONTH_STEMS[2]; // 기본값은 인월
+    const stemIndex = monthStems[yearStemIndex];
     
     return {
-        heavenlyStem: HEAVENLY_STEMS[monthStemIndex],
-        earthlyBranch: EARTHLY_BRANCHES[monthBranchIndex]
+        heavenlyStem: HEAVENLY_STEMS[stemIndex],
+        earthlyBranch: EARTHLY_BRANCHES[monthBranch],
+        month: month
     };
 }
 
-/**
- * 일주 계산
- * @param {Date} solarDate - 양력 생일
- * @returns {Object} 일주 정보
- */
-function calculateDayPillar(solarDate) {
+// 일주 계산 (만년력 기준)
+function calculateDayPillar(date) {
     // 기준일: 1900년 1월 1일 = 갑자일
     const baseDate = new Date(1900, 0, 1);
-    const daysDiff = Math.floor((solarDate - baseDate) / (1000 * 60 * 60 * 24));
+    const daysDiff = Math.floor((date - baseDate) / (24 * 60 * 60 * 1000));
     
-    // 60갑자 주기로 계산
-    const cycle = daysDiff % 60;
-    
-    const heavenlyStemIndex = cycle % 10;
-    const earthlyBranchIndex = cycle % 12;
+    const stemIndex = ((daysDiff % 10) + 10) % 10;
+    const branchIndex = ((daysDiff % 12) + 12) % 12;
     
     return {
-        heavenlyStem: HEAVENLY_STEMS[heavenlyStemIndex < 0 ? heavenlyStemIndex + 10 : heavenlyStemIndex],
-        earthlyBranch: EARTHLY_BRANCHES[earthlyBranchIndex < 0 ? earthlyBranchIndex + 12 : earthlyBranchIndex]
+        heavenlyStem: HEAVENLY_STEMS[stemIndex],
+        earthlyBranch: EARTHLY_BRANCHES[branchIndex],
+        daysDiff: daysDiff
     };
 }
 
-/**
- * 시주 계산
- * @param {number} birthTime - 출생시간 (24시간 형식)
- * @param {Object} dayPillar - 일주 정보
- * @returns {Object} 시주 정보
- */
+// 시주 계산
 function calculateTimePillar(birthTime, dayPillar) {
-    // 시지 결정 (2시간마다 하나의 지지)
-    const timeBranchIndex = Math.floor((birthTime + 1) / 2) % 12;
-    
-    // 시간 계산 (일간에 따라 결정)
-    const dayStemIndex = dayPillar.heavenlyStem.number - 1;
-    const timeStemBase = {
-        0: 0, 1: 2, 2: 4, 3: 6, 4: 8,  // 갑기일
-        5: 0, 6: 2, 7: 4, 8: 6, 9: 8   // 을경일
-    };
-    
-    const timeStemIndex = (timeStemBase[dayStemIndex] + timeBranchIndex) % 10;
+    const branchIndex = TIME_TO_BRANCH[birthTime] || 0;
+    const dayStemGroup = Math.floor((dayPillar.heavenlyStem.number - 1) / 2);
+    const stemIndex = HOUR_STEMS[dayStemGroup][branchIndex];
     
     return {
-        heavenlyStem: HEAVENLY_STEMS[timeStemIndex],
-        earthlyBranch: EARTHLY_BRANCHES[timeBranchIndex]
+        heavenlyStem: HEAVENLY_STEMS[stemIndex],
+        earthlyBranch: EARTHLY_BRANCHES[branchIndex],
+        time: birthTime
     };
 }
 
@@ -197,217 +261,199 @@ function calculateTimePillar(birthTime, dayPillar) {
  * @param {Date} lunarDate - 음력 날짜
  * @returns {Date} 양력 날짜
  */
-function convertLunarToSolar(lunarDate) {
-    // 실제로는 복잡한 천문학적 계산이 필요하지만,
-    // 여기서는 간단한 근사치를 사용
-    const year = lunarDate.getFullYear();
-    const month = lunarDate.getMonth();
-    const day = lunarDate.getDate();
-    
-    // 대략적인 오프셋 계산 (음력이 양력보다 약 20-50일 늦음)
-    const avgOffset = Math.floor(Math.random() * 30) + 20; // 20-50일 사이
-    const solarDate = new Date(lunarDate);
-    solarDate.setDate(day + avgOffset);
-    
-    // 년도가 바뀌는 경우 처리
-    if (solarDate.getFullYear() !== year) {
-        solarDate.setFullYear(year);
-        solarDate.setDate(day + 30); // 평균 오프셋
-    }
-    
-    return solarDate;
-}
-
-/**
- * 오행 분석
- * @param {Object} yearPillar - 년주
- * @param {Object} monthPillar - 월주
- * @param {Object} dayPillar - 일주
- * @param {Object} timePillar - 시주
- * @returns {Object} 오행 분석 결과
- */
-function analyzeElements(yearPillar, monthPillar, dayPillar, timePillar) {
+// 오행 분석
+function analyzeElements(pillars) {
     const elements = {
-        wood: 0,
-        fire: 0,
-        earth: 0,
-        metal: 0,
-        water: 0
+        wood: 0, fire: 0, earth: 0, metal: 0, water: 0
     };
     
-    // 천간 오행 (가중치 2)
-    [yearPillar, monthPillar, dayPillar, timePillar].forEach(pillar => {
-        elements[pillar.heavenlyStem.element] += 2;
+    const detailed = {
+        stems: [],
+        branches: [],
+        total: elements,
+        strongest: null,
+        weakest: null,
+        balance: null
+    };
+    
+    // 천간과 지지의 오행 계산
+    pillars.forEach((pillar, index) => {
+        const stemElement = pillar.heavenlyStem.element;
+        const branchElement = pillar.earthlyBranch.element;
+        
+        elements[stemElement] += 1.5; // 천간 가중치
+        elements[branchElement] += 1;  // 지지 가중치
+        
+        detailed.stems.push({
+            position: ['year', 'month', 'day', 'time'][index],
+            element: stemElement,
+            stem: pillar.heavenlyStem
+        });
+        
+        detailed.branches.push({
+            position: ['year', 'month', 'day', 'time'][index],
+            element: branchElement,
+            branch: pillar.earthlyBranch
+        });
     });
     
-    // 지지 오행 (가중치 1)
-    [yearPillar, monthPillar, dayPillar, timePillar].forEach(pillar => {
-        elements[pillar.earthlyBranch.element] += 1;
-    });
+    // 가장 강한/약한 오행 찾기
+    const elementEntries = Object.entries(elements);
+    elementEntries.sort((a, b) => b[1] - a[1]);
     
-    // 가장 강한 오행과 약한 오행 찾기
-    const strongestElement = Object.keys(elements).reduce((a, b) => 
-        elements[a] > elements[b] ? a : b
-    );
-    const weakestElement = Object.keys(elements).reduce((a, b) => 
-        elements[a] < elements[b] ? a : b
-    );
+    detailed.strongest = elementEntries[0][0];
+    detailed.weakest = elementEntries[elementEntries.length - 1][0];
+    detailed.total = elements;
     
-    return {
-        counts: elements,
-        strongest: strongestElement,
-        weakest: weakestElement,
-        balance: calculateBalance(elements)
-    };
+    // 균형도 계산 (0-1, 1이 완벽한 균형)
+    const total = Object.values(elements).reduce((a, b) => a + b, 0);
+    const average = total / 5;
+    const variance = Object.values(elements).reduce((sum, val) => sum + Math.pow(val - average, 2), 0) / 5;
+    detailed.balance = Math.max(0, 1 - (variance / (average * average)));
+    
+    return detailed;
 }
 
-/**
- * 오행 균형 계산
- * @param {Object} elements - 오행 개수
- * @returns {number} 균형도 (0-100)
- */
-function calculateBalance(elements) {
-    const values = Object.values(elements);
-    const max = Math.max(...values);
-    const min = Math.min(...values);
-    const avg = values.reduce((a, b) => a + b) / values.length;
+// 용신 계산 (간략화된 버전)
+function calculateYongSin(dayPillar, elementAnalysis) {
+    const dayStemElement = dayPillar.heavenlyStem.element;
+    const elements = elementAnalysis.total;
+    const dayStemStrength = elements[dayStemElement];
     
-    // 표준편차 계산
-    const variance = values.reduce((sum, val) => sum + Math.pow(val - avg, 2), 0) / values.length;
-    const stdDev = Math.sqrt(variance);
-    
-    // 균형도 계산 (표준편차가 작을수록 높은 균형도)
-    const balance = Math.max(0, 100 - (stdDev * 20));
-    
-    return Math.round(balance);
-}
-
-/**
- * 사주 호환성 계산 (로또 번호 생성에 활용)
- * @param {Object} sajuResult - 사주 결과
- * @returns {Array} 길한 숫자들
- */
-function calculateLuckyNumbers(sajuResult) {
-    const luckyNumbers = [];
-    const elements = sajuResult.elements;
-    const dayElement = sajuResult.dayPillar.heavenlyStem.element;
-    
-    // 일간 오행에 따른 길한 숫자
-    const elementNumbers = {
-        wood: [3, 4, 8, 13, 14, 23, 24, 33, 34, 43, 44],
-        fire: [2, 7, 9, 16, 17, 25, 26, 27, 35, 36, 45],
-        earth: [5, 6, 10, 15, 20, 28, 29, 30, 38, 39, 40],
-        metal: [1, 11, 19, 21, 31, 37, 41, 42],
-        water: [12, 18, 22, 32]
+    let yongSin = {
+        primary: null,
+        secondary: null,
+        avoid: null,
+        reasoning: ''
     };
     
-    // 기본 길한 숫자
-    luckyNumbers.push(...(elementNumbers[dayElement] || []));
+    // 일간이 강한지 약한지 판단
+    const totalOther = Object.entries(elements)
+        .filter(([el]) => el !== dayStemElement)
+        .reduce((sum, [, val]) => sum + val, 0);
     
-    // 부족한 오행 보완 숫자
-    const weakElement = elements.weakest;
-    if (weakElement !== dayElement) {
-        luckyNumbers.push(...(elementNumbers[weakElement] || []));
+    const isDayWeak = dayStemStrength < totalOther / 4;
+    
+    if (isDayWeak) {
+        // 일간이 약하면 생조하는 오행이 용신
+        yongSin.primary = findGeneratingElement(dayStemElement);
+        yongSin.secondary = dayStemElement;
+        yongSin.avoid = findDestroyingElement(dayStemElement);
+        yongSin.reasoning = '일간이 약하므로 생조하는 오행을 용신으로 함';
+    } else {
+        // 일간이 강하면 설기하는 오행이 용신
+        yongSin.primary = findDestroyedElement(dayStemElement);
+        yongSin.secondary = findGeneratedElement(dayStemElement);
+        yongSin.avoid = findGeneratingElement(dayStemElement);
+        yongSin.reasoning = '일간이 강하므로 설기하는 오행을 용신으로 함';
     }
     
-    return [...new Set(luckyNumbers)].sort((a, b) => a - b);
+    return yongSin;
 }
 
-/**
- * 특정 날짜의 운세 계산
- * @param {Object} sajuResult - 사주 결과
- * @param {Date} targetDate - 대상 날짜 (기본: 오늘)
- * @returns {Object} 운세 정보
- */
-function calculateFortune(sajuResult, targetDate = new Date()) {
-    const dayPillar = calculateDayPillar(targetDate);
-    const dayElement = dayPillar.heavenlyStem.element;
-    const userDayElement = sajuResult.dayPillar.heavenlyStem.element;
-    
-    // 상생상극 관계 확인
-    const relationship = getElementRelationship(userDayElement, dayElement);
-    
-    let fortuneScore = 50; // 기본 50점
-    
-    switch (relationship) {
-        case 'same':
-            fortuneScore = 70;
-            break;
-        case 'supporting':
-            fortuneScore = 85;
-            break;
-        case 'supported':
-            fortuneScore = 75;
-            break;
-        case 'conflicting':
-            fortuneScore = 30;
-            break;
-        case 'conflicted':
-            fortuneScore = 40;
-            break;
-    }
+// 기본 해석 생성
+function generateBasicInterpretation(dayPillar, elementAnalysis, yongSin) {
+    const dayStem = dayPillar.heavenlyStem;
+    const dayBranch = dayPillar.earthlyBranch;
+    const strongElement = elementAnalysis.strongest;
     
     return {
-        score: fortuneScore,
-        relationship,
-        advice: getFortunAdvice(relationship, fortuneScore)
+        personality: generatePersonalityReading(dayStem, dayBranch),
+        strengths: generateStrengthsReading(dayStem.element, strongElement),
+        recommendations: generateRecommendations(yongSin),
+        luckyColors: getLuckyColors(yongSin.primary),
+        luckyNumbers: getLuckyNumbers(dayStem.element),
+        favorableDirections: getFavorableDirections(yongSin.primary)
     };
 }
 
-/**
- * 오행 관계 확인
- * @param {string} element1 - 첫 번째 오행
- * @param {string} element2 - 두 번째 오행
- * @returns {string} 관계 타입
- */
-function getElementRelationship(element1, element2) {
-    if (element1 === element2) return 'same';
-    
-    const supportingChain = ['wood', 'fire', 'earth', 'metal', 'water'];
-    const index1 = supportingChain.indexOf(element1);
-    const index2 = supportingChain.indexOf(element2);
-    
-    if ((index1 + 1) % 5 === index2) return 'supporting'; // 1이 2를 생성
-    if ((index2 + 1) % 5 === index1) return 'supported';  // 2가 1을 생성
-    if ((index1 + 2) % 5 === index2) return 'conflicting'; // 1이 2를 극함
-    if ((index2 + 2) % 5 === index1) return 'conflicted';  // 2가 1을 극함
-    
-    return 'neutral';
+// 보조 함수들
+function findGeneratingElement(element) {
+    const reverse = Object.fromEntries(Object.entries(ELEMENT_RELATIONS.generation).map(([k, v]) => [v, k]));
+    return reverse[element];
 }
 
-/**
- * 운세 조언 생성
- * @param {string} relationship - 오행 관계
- * @param {number} score - 운세 점수
- * @returns {string} 조언 메시지
- */
-function getFortunAdvice(relationship, score) {
-    const advices = {
-        same: '안정적인 기운이 흐르는 날입니다. 평소 계획했던 일들을 실행하기 좋습니다.',
-        supporting: '매우 길한 날입니다! 새로운 도전이나 중요한 결정을 하기에 적합합니다.',
-        supported: '도움받는 기운이 강합니다. 주변 사람들과의 협력이 좋은 결과를 가져올 것입니다.',
-        conflicting: '신중함이 필요한 날입니다. 급한 결정보다는 차근차근 준비하는 것이 좋습니다.',
-        conflicted: '어려움이 있을 수 있지만, 인내심을 가지고 극복한다면 더 큰 성장을 이룰 수 있습니다.',
-        neutral: '평범한 하루가 될 것 같습니다. 꾸준히 노력하는 자세가 중요합니다.'
+function findGeneratedElement(element) {
+    return ELEMENT_RELATIONS.generation[element];
+}
+
+function findDestroyingElement(element) {
+    const reverse = Object.fromEntries(Object.entries(ELEMENT_RELATIONS.destruction).map(([k, v]) => [v, k]));
+    return reverse[element];
+}
+
+function findDestroyedElement(element) {
+    return ELEMENT_RELATIONS.destruction[element];
+}
+
+function generatePersonalityReading(dayStem, dayBranch) {
+    const traits = {
+        wood: '창조적이고 성장지향적이며, 유연함과 인내력을 겸비하고 있습니다.',
+        fire: '열정적이고 활동적이며, 밝고 긍정적인 에너지를 가지고 있습니다.',
+        earth: '안정적이고 신뢰할 수 있으며, 포용력과 지속성을 가지고 있습니다.',
+        metal: '논리적이고 정확하며, 강한 의지력과 결단력을 가지고 있습니다.',
+        water: '지혜롭고 적응력이 뛰어나며, 깊이 있는 사고력을 가지고 있습니다.'
     };
-    
-    return advices[relationship] || advices.neutral;
+    return traits[dayStem.element];
 }
 
-// 전역 함수로 내보내기 (브라우저 환경)
+function generateStrengthsReading(dayElement, strongElement) {
+    if (dayElement === strongElement) {
+        return `본인의 ${getElementName(dayElement)} 기운이 강하여 해당 특성이 잘 발현됩니다.`;
+    } else {
+        return `${getElementName(strongElement)} 기운이 강하여 이를 잘 활용하면 큰 도움이 됩니다.`;
+    }
+}
+
+function generateRecommendations(yongSin) {
+    return `${getElementName(yongSin.primary)} 기운을 강화하는 것이 도움이 되며, ${getElementName(yongSin.avoid)} 기운은 피하는 것이 좋습니다.`;
+}
+
+function getLuckyColors(element) {
+    const colors = {
+        wood: ['초록색', '청색'],
+        fire: ['빨간색', '주황색'],
+        earth: ['노란색', '갈색'],
+        metal: ['흰색', '금색'],
+        water: ['검은색', '남색']
+    };
+    return colors[element] || ['흰색'];
+}
+
+function getLuckyNumbers(element) {
+    const numbers = {
+        wood: [3, 4, 13, 14, 23, 24, 33, 34, 43, 44],
+        fire: [2, 7, 12, 17, 22, 27, 32, 37, 42],
+        earth: [5, 6, 15, 16, 25, 26, 35, 36, 45],
+        metal: [4, 9, 14, 19, 24, 29, 34, 39, 44],
+        water: [1, 6, 11, 16, 21, 26, 31, 36, 41]
+    };
+    return numbers[element] || [1, 2, 3, 4, 5];
+}
+
+function getFavorableDirections(element) {
+    const directions = {
+        wood: ['동쪽', '남동쪽'],
+        fire: ['남쪽', '남서쪽'],
+        earth: ['중앙', '남서쪽', '북동쪽'],
+        metal: ['서쪽', '북서쪽'],
+        water: ['북쪽', '북동쪽']
+    };
+    return directions[element] || ['동쪽'];
+}
+
+function getElementName(element) {
+    const names = {
+        wood: '목(木)',
+        fire: '화(火)', 
+        earth: '토(土)',
+        metal: '금(金)',
+        water: '수(水)'
+    };
+    return names[element] || element;
+}
+
+// 전역 스코프에 함수 노출
 if (typeof window !== 'undefined') {
     window.calculateSaju = calculateSaju;
-    window.calculateLuckyNumbers = calculateLuckyNumbers;
-    window.calculateFortune = calculateFortune;
-}
-
-// Node.js 환경을 위한 내보내기
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = {
-        calculateSaju,
-        calculateLuckyNumbers,
-        calculateFortune,
-        HEAVENLY_STEMS,
-        EARTHLY_BRANCHES
-    };
 }

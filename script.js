@@ -251,6 +251,9 @@ function getElementName(element) {
 
 // 결과 표시
 function displayResults(sajuResult, lottoNumbers) {
+    // 대운/세운 기본 정보 추가
+    addBasicLuckInfo(sajuResult);
+    
     // 사주 정보 표시
     displaySajuInfo(sajuResult);
     
@@ -261,42 +264,108 @@ function displayResults(sajuResult, lottoNumbers) {
     explanationText.textContent = lottoNumbers.explanation;
 }
 
-// 사주 정보 표시
+// 사주 정보 표시 (개선된 버전)
 function displaySajuInfo(sajuResult) {
-    const sajuText = `
+    // 사주명반 HTML 생성
+    const sajuPillarsHTML = `
         <div class="pillar-container">
             <div class="pillar">
-                <div class="pillar-title">년주</div>
+                <div class="pillar-title">년주 (年柱)</div>
                 <div class="pillar-content">
-                    <div>${sajuResult.yearPillar.heavenlyStem.name}</div>
-                    <div>${sajuResult.yearPillar.earthlyBranch.name}</div>
+                    <div class="pillar-stem element-${sajuResult.yearPillar.heavenlyStem.element}">${sajuResult.yearPillar.heavenlyStem.name}</div>
+                    <div class="pillar-branch element-${sajuResult.yearPillar.earthlyBranch.element}">${sajuResult.yearPillar.earthlyBranch.name}</div>
                 </div>
             </div>
             <div class="pillar">
-                <div class="pillar-title">월주</div>
+                <div class="pillar-title">월주 (月柱)</div>
                 <div class="pillar-content">
-                    <div>${sajuResult.monthPillar.heavenlyStem.name}</div>
-                    <div>${sajuResult.monthPillar.earthlyBranch.name}</div>
+                    <div class="pillar-stem element-${sajuResult.monthPillar.heavenlyStem.element}">${sajuResult.monthPillar.heavenlyStem.name}</div>
+                    <div class="pillar-branch element-${sajuResult.monthPillar.earthlyBranch.element}">${sajuResult.monthPillar.earthlyBranch.name}</div>
                 </div>
             </div>
             <div class="pillar">
-                <div class="pillar-title">일주</div>
+                <div class="pillar-title">일주 (日柱)</div>
                 <div class="pillar-content">
-                    <div>${sajuResult.dayPillar.heavenlyStem.name}</div>
-                    <div>${sajuResult.dayPillar.earthlyBranch.name}</div>
+                    <div class="pillar-stem element-${sajuResult.dayPillar.heavenlyStem.element}">${sajuResult.dayPillar.heavenlyStem.name}</div>
+                    <div class="pillar-branch element-${sajuResult.dayPillar.earthlyBranch.element}">${sajuResult.dayPillar.earthlyBranch.name}</div>
                 </div>
             </div>
             <div class="pillar">
-                <div class="pillar-title">시주</div>
+                <div class="pillar-title">시주 (時柱)</div>
                 <div class="pillar-content">
-                    <div>${sajuResult.timePillar.heavenlyStem.name}</div>
-                    <div>${sajuResult.timePillar.earthlyBranch.name}</div>
+                    <div class="pillar-stem element-${sajuResult.timePillar.heavenlyStem.element}">${sajuResult.timePillar.heavenlyStem.name}</div>
+                    <div class="pillar-branch element-${sajuResult.timePillar.earthlyBranch.element}">${sajuResult.timePillar.earthlyBranch.name}</div>
                 </div>
             </div>
         </div>
     `;
     
-    sajuDisplay.innerHTML = sajuText;
+    // 오행 분석 차트 생성
+    const elementAnalysisHTML = generateElementAnalysisHTML(sajuResult.elementAnalysis);
+    
+    // 사주 해석 생성
+    const interpretationHTML = generateInterpretationHTML(sajuResult.interpretation, sajuResult.yongSin);
+    
+    // 모든 HTML 조합
+    const fullSajuHTML = `
+        ${sajuPillarsHTML}
+        ${elementAnalysisHTML}
+        ${interpretationHTML}
+    `;
+    
+    sajuDisplay.innerHTML = fullSajuHTML;
+}
+
+// 오행 분석 차트 HTML 생성
+function generateElementAnalysisHTML(elementAnalysis) {
+    const elements = elementAnalysis.total;
+    const elementNames = {
+        wood: '목(木)', fire: '화(火)', earth: '토(土)', 
+        metal: '금(金)', water: '수(水)'
+    };
+    
+    let analysisHTML = '<div class="element-analysis">';
+    
+    Object.entries(elements).forEach(([element, strength]) => {
+        const roundedStrength = Math.round(strength * 10) / 10;
+        analysisHTML += `
+            <div class="element-item">
+                <div class="element-name">${elementNames[element]}</div>
+                <div class="element-strength element-${element}">${roundedStrength}</div>
+            </div>
+        `;
+    });
+    
+    analysisHTML += '</div>';
+    return analysisHTML;
+}
+
+// 사주 해석 HTML 생성
+function generateInterpretationHTML(interpretation, yongSin) {
+    return `
+        <div class="saju-interpretation">
+            <div class="interpretation-section">
+                <div class="interpretation-title">성격 특성</div>
+                <div class="interpretation-content">${interpretation.personality}</div>
+            </div>
+            <div class="interpretation-section">
+                <div class="interpretation-title">장점 및 강점</div>
+                <div class="interpretation-content">${interpretation.strengths}</div>
+            </div>
+            <div class="interpretation-section">
+                <div class="interpretation-title">용신 및 권고사항</div>
+                <div class="interpretation-content">${interpretation.recommendations}</div>
+            </div>
+            <div class="interpretation-section">
+                <div class="interpretation-title">행운의 색상</div>
+                <div class="interpretation-content">${interpretation.luckyColors.join(', ')}</div>
+            </div>
+            <div class="interpretation-section">
+                <div class="interpretation-title">길한 방향</div>
+                <div class="interpretation-content">${interpretation.favorableDirections.join(', ')}</div>
+            </div>
+        </div>
+    `;
 }
 
 // 로또 번호 표시
@@ -355,60 +424,29 @@ function hideResults() {
     resultSection.classList.add('hidden');
 }
 
-// CSS 스타일 추가 (사주 표시용)
-const style = document.createElement('style');
-style.textContent = `
-    .pillar-container {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 15px;
-        max-width: 400px;
-        margin: 0 auto;
-    }
+// 대운/세운 기본 정보 추가 (간략화된 버전)
+function addBasicLuckInfo(sajuResult) {
+    const currentYear = new Date().getFullYear();
+    const birthYear = sajuResult.birthInfo.originalDate.getFullYear();
+    const age = currentYear - birthYear + 1;
     
-    .pillar {
-        text-align: center;
-        border: 2px solid var(--border-color);
-        border-radius: 10px;
-        padding: 12px 8px;
-        background: white;
-    }
+    // 현재 대운 추정 (10년 단위)
+    const currentGreatLuckPeriod = Math.floor(age / 10) + 1;
     
-    .pillar-title {
-        font-size: 0.9rem;
-        color: var(--wood-color);
-        margin-bottom: 8px;
-        font-weight: 600;
-    }
+    // 올해 세운 (간단한 계산)
+    const yearDiff = currentYear - 1984; // 1984년 갑자년 기준
+    const annualStemIndex = yearDiff % 10;
+    const annualBranchIndex = yearDiff % 12;
     
-    .pillar-content div {
-        font-family: 'Nanum Myeongjo', serif;
-        font-size: 1.1rem;
-        font-weight: 700;
-        color: var(--water-color);
-        margin: 2px 0;
+    if (sajuResult.elementAnalysis) {
+        sajuResult.elementAnalysis.currentLuck = {
+            greatLuckPeriod: currentGreatLuckPeriod,
+            annualStem: window.HEAVENLY_STEMS ? window.HEAVENLY_STEMS[annualStemIndex]?.name || '미정' : '미정',
+            annualBranch: window.EARTHLY_BRANCHES ? window.EARTHLY_BRANCHES[annualBranchIndex]?.name || '미정' : '미정',
+            age: age
+        };
     }
-    
-    @media (max-width: 480px) {
-        .pillar-container {
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-        }
-        
-        .pillar {
-            padding: 10px 6px;
-        }
-        
-        .pillar-title {
-            font-size: 0.8rem;
-        }
-        
-        .pillar-content div {
-            font-size: 1rem;
-        }
-    }
-`;
-document.head.appendChild(style);
+}
 
 // 페이지 로드 시 초기화
 document.addEventListener('DOMContentLoaded', function() {
