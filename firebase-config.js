@@ -6,12 +6,13 @@ import { getMessaging, getToken, onMessage, isSupported } from 'firebase/messagi
 
 // Firebase 구성 정보 (실제 프로젝트에서는 환경변수 사용 권장)
 const firebaseConfig = {
-  apiKey: "your-api-key-here",
-  authDomain: "your-project-id.firebaseapp.com", 
-  projectId: "your-project-id",
-  storageBucket: "your-project-id.appspot.com",
-  messagingSenderId: "123456789",
-  appId: "your-app-id"
+  apiKey: "AIzaSyC6ZbSRmWDMdQyFwOx7WM5uwzQnrM5TTyA",
+  authDomain: "saju-lotto-9de6f.firebaseapp.com",
+  projectId: "saju-lotto-9de6f",
+  storageBucket: "saju-lotto-9de6f.firebasestorage.app",
+  messagingSenderId: "474742706016",
+  appId: "1:474742706016:web:669e4fa2df6d80216ad805",
+  measurementId: "G-980YDW4TDH"
 };
 
 // Firebase 앱 초기화
