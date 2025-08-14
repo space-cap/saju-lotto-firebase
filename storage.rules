@@ -1,0 +1,40 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // 사용자 프로필 이미지
+    match /users/{userId}/profile/{filename} {
+      allow read, write: if request.auth != null && request.auth.uid == userId
+                      && filename.matches('.*\\.(jpg|jpeg|png|gif|webp)')
+                      && request.resource.size < 5 * 1024 * 1024; // 5MB 제한
+    }
+    
+    // 사용자 번호 스크린샷
+    match /users/{userId}/screenshots/{filename} {
+      allow read, write: if request.auth != null && request.auth.uid == userId
+                      && filename.matches('.*\\.(jpg|jpeg|png|webp)')
+                      && request.resource.size < 10 * 1024 * 1024; // 10MB 제한
+    }
+    
+    // 공용 앱 아이콘 및 이미지 (읽기 전용)
+    match /public/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.token.admin == true;
+    }
+    
+    // 임시 파일 (24시간 후 자동 삭제)
+    match /temp/{userId}/{filename} {
+      allow read, write: if request.auth != null && request.auth.uid == userId
+                      && request.resource.size < 20 * 1024 * 1024; // 20MB 제한
+    }
+    
+    // 백업 데이터 (관리자만)
+    match /backups/{allPaths=**} {
+      allow read, write: if request.auth != null && request.auth.token.admin == true;
+    }
+    
+    // 로그 파일 (관리자만)
+    match /logs/{allPaths=**} {
+      allow read, write: if request.auth != null && request.auth.token.admin == true;
+    }
+  }
+}

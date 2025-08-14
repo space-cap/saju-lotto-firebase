@@ -3,9 +3,63 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="전통 사주명리학을 기반으로 한 개인 맞춤형 로또번호 생성 앱. PWA 지원으로 오프라인에서도 이용 가능.">
+    <meta name="keywords" content="사주, 명리학, 로또번호, 운세, 궁합, 사주팔자, 행운번호, PWA">
+    <meta name="author" content="사주로또">
+    <meta name="theme-color" content="#8b4513">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="사주로또">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="사주명리 로또번호 생성기">
+    <meta property="og:description" content="전통 사주명리학으로 만나는 당신만의 행운번호">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="/icons/icon-512x512.png">
+    <meta property="og:url" content="https://your-domain.com">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="사주명리 로또번호 생성기">
+    <meta name="twitter:description" content="전통 사주명리학으로 만나는 당신만의 행운번호">
+    <meta name="twitter:image" content="/icons/icon-512x512.png">
+    
     <title>사주로 만나는 행운의 번호</title>
+    <link rel="manifest" href="/manifest.json">
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Nanum+Myeongjo:wght@400;700;800&display=swap" rel="stylesheet">
+    
+    <!-- PWA Icons -->
+    <link rel="icon" type="image/png" sizes="72x72" href="/icons/icon-72x72.png">
+    <link rel="icon" type="image/png" sizes="96x96" href="/icons/icon-96x96.png">
+    <link rel="icon" type="image/png" sizes="128x128" href="/icons/icon-128x128.png">
+    <link rel="icon" type="image/png" sizes="144x144" href="/icons/icon-144x144.png">
+    <link rel="icon" type="image/png" sizes="152x152" href="/icons/icon-152x152.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="384x384" href="/icons/icon-384x384.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512x512.png">
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
+    
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "사주명리 로또번호 생성기",
+      "alternateName": "사주로또",
+      "description": "전통 사주명리학을 기반으로 한 개인 맞춤형 로또번호 생성 앱",
+      "url": "https://your-domain.com",
+      "category": "Entertainment",
+      "operatingSystem": "Any",
+      "applicationCategory": "LifestyleApplication",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "KRW"
+      }
+    }
+    </script>
 </head>
 <body>
     <div class="container">
@@ -651,7 +705,266 @@
 
     <script type="module" src="firebase-config.js"></script>
     <script src="saju-engine.js"></script>
+    <script src="offline-cache.js"></script>
+    <script src="notification-manager.js"></script>
+    <script src="theme-manager.js"></script>
+    <script src="app-shortcuts.js"></script>
+    <script src="i18n.js"></script>
+    <script src="accessibility.js"></script>
+    <script src="analytics.js"></script>
     <script src="script.js"></script>
     <script src="auth-handler.js"></script>
+    
+    <script>
+        // 서비스 워커 등록
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', async () => {
+                try {
+                    const registration = await navigator.serviceWorker.register('/sw.js');
+                    console.log('SW registered: ', registration);
+                    
+                    // PWA 설치 프롬프트 처리
+                    let deferredPrompt;
+                    window.addEventListener('beforeinstallprompt', (e) => {
+                        e.preventDefault();
+                        deferredPrompt = e;
+                        showInstallPrompt();
+                    });
+                    
+                    function showInstallPrompt() {
+                        const installBanner = document.createElement('div');
+                        installBanner.className = 'install-banner';
+                        installBanner.innerHTML = `
+                            <div class="install-content">
+                                <span class="install-icon">📱</span>
+                                <span class="install-text">앱으로 설치하여 더 편리하게 이용하세요!</span>
+                                <button class="install-btn" onclick="installPWA()">설치</button>
+                                <button class="install-close" onclick="this.closest('.install-banner').remove()">✕</button>
+                            </div>
+                        `;
+                        
+                        installBanner.style.cssText = `
+                            position: fixed;
+                            bottom: 20px;
+                            left: 20px;
+                            right: 20px;
+                            background: var(--primary-color);
+                            color: white;
+                            padding: 15px;
+                            border-radius: 12px;
+                            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                            z-index: 1000;
+                            animation: slideUp 0.3s ease-out;
+                        `;
+                        
+                        document.body.appendChild(installBanner);
+                    }
+                    
+                    window.installPWA = async () => {
+                        if (deferredPrompt) {
+                            deferredPrompt.prompt();
+                            const { outcome } = await deferredPrompt.userChoice;
+                            console.log(`PWA install prompt outcome: ${outcome}`);
+                            deferredPrompt = null;
+                            document.querySelector('.install-banner')?.remove();
+                        }
+                    };
+                    
+                } catch (error) {
+                    console.log('SW registration failed: ', error);
+                }
+            });
+        }
+        
+        // PWA 설치 감지
+        window.addEventListener('appinstalled', (evt) => {
+            console.log('PWA가 설치되었습니다');
+            if (window.notificationManager) {
+                window.notificationManager.announce('앱이 성공적으로 설치되었습니다!');
+            }
+        });
+        
+        // 네트워크 상태 감지
+        window.addEventListener('online', () => {
+            console.log('온라인 상태로 변경됨');
+            document.body.classList.remove('offline');
+        });
+        
+        window.addEventListener('offline', () => {
+            console.log('오프라인 상태로 변경됨');
+            document.body.classList.add('offline');
+        });
+        
+        // 앱 단축키 URL 파라미터 처리
+        document.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const action = urlParams.get('action');
+            
+            if (action) {
+                // URL에서 action 파라미터 제거
+                const newUrl = new URL(window.location);
+                newUrl.searchParams.delete('action');
+                window.history.replaceState({}, '', newUrl);
+                
+                // 액션 실행
+                setTimeout(() => {
+                    if (window.appShortcuts) {
+                        window.appShortcuts.executeAction(action);
+                    }
+                }, 1000);
+            }
+        });
+        
+        // 언어 변경 이벤트 처리
+        document.addEventListener('languageChanged', (event) => {
+            console.log('언어가 변경되었습니다:', event.detail.locale);
+            // 필요시 추가 처리
+        });
+        
+        // 테마 변경 이벤트 처리
+        document.addEventListener('themeChanged', (event) => {
+            console.log('테마가 변경되었습니다:', event.detail.theme);
+            // 필요시 추가 처리
+        });
+        
+        // 전역 에러 처리
+        window.addEventListener('error', (event) => {
+            console.error('Global error:', event.error);
+            if (window.offlineCache) {
+                window.offlineCache.saveSetting('lastError', {
+                    message: event.error.message,
+                    stack: event.error.stack,
+                    timestamp: new Date().toISOString()
+                });
+            }
+        });
+        
+        // Promise rejection 처리
+        window.addEventListener('unhandledrejection', (event) => {
+            console.error('Unhandled promise rejection:', event.reason);
+            if (window.offlineCache) {
+                window.offlineCache.saveSetting('lastRejection', {
+                    reason: event.reason.toString(),
+                    timestamp: new Date().toISOString()
+                });
+            }
+        });
+        
+        // 페이지 가시성 변경 감지
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+                // 앱이 포그라운드로 돌아왔을 때
+                if (window.offlineCache) {
+                    window.offlineCache.processSyncQueue();
+                }
+            } else {
+                // 앱이 백그라운드로 갔을 때
+                console.log('App moved to background');
+            }
+        });
+        
+        console.log('🏮 사주명리 로또번호 생성기 PWA v2.0 로드 완료');
+        console.log('✨ 새로운 기능: PWA, 스마트 알림, 다크모드, 오프라인 지원, 다국어, 접근성');
+    </script>
+    
+    <!-- PWA 설치 스타일 -->
+    <style>
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .install-content {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        
+        .install-icon {
+            font-size: 20px;
+        }
+        
+        .install-text {
+            flex: 1;
+            min-width: 200px;
+            font-size: 14px;
+        }
+        
+        .install-btn {
+            background: white;
+            color: var(--primary-color);
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        .install-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        
+        .install-close {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 4px;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .install-close:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        /* 오프라인 상태 표시 */
+        body.offline::before {
+            content: '⚠️ 오프라인 모드';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: #ff9800;
+            color: white;
+            text-align: center;
+            padding: 8px;
+            font-weight: bold;
+            z-index: 10000;
+            font-size: 14px;
+        }
+        
+        body.offline {
+            padding-top: 40px;
+        }
+        
+        @media (max-width: 480px) {
+            .install-content {
+                flex-direction: column;
+                text-align: center;
+                gap: 10px;
+            }
+            
+            .install-text {
+                min-width: auto;
+                font-size: 13px;
+            }
+        }
+    </style>
 </body>
 </html>

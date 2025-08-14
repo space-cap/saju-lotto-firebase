@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>오프라인 - 사주명리 로또번호 생성기</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans KR', 'Nanum Myeongjo', serif;
+            background: linear-gradient(135deg, #2c1810 0%, #8b4513 100%);
+            color: #f5e6d3;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .offline-container {
+            max-width: 400px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            padding: 40px 30px;
+            border: 2px solid #d4af37;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .offline-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            opacity: 0.8;
+        }
+
+        .offline-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #d4af37;
+        }
+
+        .offline-message {
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 30px;
+            opacity: 0.9;
+        }
+
+        .offline-features {
+            text-align: left;
+            margin-bottom: 30px;
+        }
+
+        .offline-features h3 {
+            color: #d4af37;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .offline-features ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .offline-features li {
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+        }
+
+        .offline-features li:last-child {
+            border-bottom: none;
+        }
+
+        .offline-features li::before {
+            content: "✓ ";
+            color: #d4af37;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+
+        .retry-btn {
+            background: linear-gradient(45deg, #d4af37, #f4e4bc);
+            color: #2c1810;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 0 10px;
+        }
+
+        .retry-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(212, 175, 55, 0.4);
+        }
+
+        .offline-saju {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid rgba(212, 175, 55, 0.3);
+        }
+
+        .offline-saju h3 {
+            color: #d4af37;
+            margin-bottom: 15px;
+        }
+
+        .quick-generate {
+            background: rgba(212, 175, 55, 0.1);
+            border: 1px solid #d4af37;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .birth-inputs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 15px 0;
+            justify-content: center;
+        }
+
+        .birth-inputs input {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid #d4af37;
+            border-radius: 5px;
+            padding: 8px 12px;
+            color: #f5e6d3;
+            font-size: 14px;
+            width: 80px;
+            text-align: center;
+        }
+
+        .birth-inputs input::placeholder {
+            color: rgba(245, 230, 211, 0.7);
+        }
+
+        .generate-offline {
+            background: linear-gradient(45deg, #8b4513, #d4af37);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+
+        .offline-result {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            border: 1px solid #d4af37;
+            display: none;
+        }
+
+        .offline-numbers {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+
+        .number {
+            background: linear-gradient(45deg, #d4af37, #f4e4bc);
+            color: #2c1810;
+            font-weight: bold;
+            font-size: 18px;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 2px;
+        }
+
+        @media (max-width: 480px) {
+            .offline-container {
+                padding: 30px 20px;
+            }
+
+            .offline-title {
+                font-size: 20px;
+            }
+
+            .birth-inputs {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .birth-inputs input {
+                width: 120px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="offline-container">
+        <div class="offline-icon">🏮</div>
+        <h1 class="offline-title">오프라인 모드</h1>
+        <p class="offline-message">
+            현재 인터넷 연결이 없습니다.<br>
+            하지만 걱정하지 마세요!
+        </p>
+
+        <div class="offline-features">
+            <h3>🌟 오프라인에서도 가능한 기능</h3>
+            <ul>
+                <li>기본 사주 계산 및 분석</li>
+                <li>간단한 로또번호 생성</li>
+                <li>이전 저장된 번호 확인</li>
+                <li>오행 기반 운세 해석</li>
+            </ul>
+        </div>
+
+        <div class="offline-saju">
+            <h3>💫 간단 사주 번호 생성</h3>
+            <div class="quick-generate">
+                <p>생년월일시를 입력하여 기본 번호를 생성할 수 있습니다.</p>
+                <div class="birth-inputs">
+                    <input type="number" id="offline-year" placeholder="년도" min="1900" max="2100">
+                    <input type="number" id="offline-month" placeholder="월" min="1" max="12">
+                    <input type="number" id="offline-day" placeholder="일" min="1" max="31">
+                    <input type="number" id="offline-hour" placeholder="시간" min="0" max="23">
+                </div>
+                <button class="generate-offline" onclick="generateOfflineNumbers()">
+                    오프라인 번호 생성
+                </button>
+                
+                <div id="offline-result" class="offline-result">
+                    <h4>🎯 생성된 번호</h4>
+                    <div id="offline-numbers" class="offline-numbers"></div>
+                    <p id="offline-explanation" style="margin-top: 15px; font-size: 14px; opacity: 0.9;"></p>
+                </div>
+            </div>
+        </div>
+
+        <div style="margin-top: 30px;">
+            <button class="retry-btn" onclick="location.reload()">
+                🔄 다시 연결 시도
+            </button>
+            <button class="retry-btn" onclick="window.history.back()">
+                ← 뒤로 가기
+            </button>
+        </div>
+    </div>
+
+    <script>
+        function generateOfflineNumbers() {
+            const year = parseInt(document.getElementById('offline-year').value);
+            const month = parseInt(document.getElementById('offline-month').value);
+            const day = parseInt(document.getElementById('offline-day').value);
+            const hour = parseInt(document.getElementById('offline-hour').value);
+
+            if (!year || !month || !day || hour === undefined) {
+                alert('모든 정보를 입력해주세요.');
+                return;
+            }
+
+            if (month < 1 || month > 12 || day < 1 || day > 31 || hour < 0 || hour > 23) {
+                alert('올바른 날짜와 시간을 입력해주세요.');
+                return;
+            }
+
+            const heavenlyStems = ['갑', '을', '병', '정', '무', '기', '경', '신', '임', '계'];
+            const earthlyBranches = ['자', '축', '인', '묘', '진', '사', '오', '미', '신', '유', '술', '해'];
+
+            const yearStem = heavenlyStems[(year - 4) % 10];
+            const yearBranch = earthlyBranches[(year - 4) % 12];
+            const dayStem = heavenlyStems[(day - 1) % 10];
+            const dayBranch = earthlyBranches[(day - 1) % 12];
+
+            const numbers = [];
+            const stemValue = heavenlyStems.indexOf(dayStem) + 1;
+            const branchValue = earthlyBranches.indexOf(dayBranch) + 1;
+
+            for (let i = 0; i < 6; i++) {
+                const base = (stemValue + branchValue + i * 7 + month + hour) % 45 + 1;
+                numbers.push(base);
+            }
+
+            const sortedNumbers = numbers.sort((a, b) => a - b);
+
+            document.getElementById('offline-numbers').innerHTML = 
+                sortedNumbers.map(num => `<div class="number">${num}</div>`).join('');
+            
+            document.getElementById('offline-explanation').textContent = 
+                `${yearStem}${yearBranch}년생, ${dayStem}${dayBranch}일주를 기반으로 한 오프라인 생성 번호입니다.`;
+            
+            document.getElementById('offline-result').style.display = 'block';
+
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.ready.then(registration => {
+                    registration.active.postMessage({
+                        type: 'CACHE_SAJU_DATA',
+                        payload: {
+                            birthData: { year, month, day, hour },
+                            numbers: sortedNumbers,
+                            timestamp: new Date().toISOString(),
+                            isOffline: true
+                        }
+                    });
+                });
+            }
+        }
+
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js').catch(console.error);
+        }
+
+        window.addEventListener('online', () => {
+            const banner = document.createElement('div');
+            banner.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                background: #4CAF50;
+                color: white;
+                text-align: center;
+                padding: 15px;
+                font-size: 16px;
+                font-weight: bold;
+                z-index: 1000;
+            `;
+            banner.textContent = '✅ 인터넷이 연결되었습니다! 새로고침해주세요.';
+            document.body.appendChild(banner);
+
+            setTimeout(() => {
+                banner.remove();
+            }, 5000);
+        });
+    </script>
+</body>
+</html>

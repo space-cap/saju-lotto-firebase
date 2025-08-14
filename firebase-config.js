@@ -2,6 +2,7 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore, collection, addDoc, getDocs, query, orderBy, deleteDoc, doc, setDoc, getDoc, where, onSnapshot, limit, serverTimestamp } from 'firebase/firestore';
+import { getMessaging, getToken, onMessage, isSupported } from 'firebase/messaging';
 
 // Firebase 구성 정보 (실제 프로젝트에서는 환경변수 사용 권장)
 const firebaseConfig = {
@@ -19,6 +20,17 @@ const app = initializeApp(firebaseConfig);
 // Firebase 서비스 초기화
 const auth = getAuth(app);
 const db = getFirestore(app);
+let messaging = null;
+
+// FCM 초기화 (지원되는 경우에만)
+if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+  isSupported().then(supported => {
+    if (supported) {
+      messaging = getMessaging(app);
+      initializeMessaging();
+    }
+  });
+}
 
 // Google 인증 제공자 설정
 const googleProvider = new GoogleAuthProvider();
@@ -890,7 +902,332 @@ window.firebaseAuth = {
   savePersonalAnalysis,
   loadPersonalAnalysis,
   getFortunePatternHistory,
-  getFortuneNumberResults
+  getFortuneNumberResults,
+  // FCM 및 알림 관련 함수들
+  initializeMessaging,
+  saveFCMToken,
+  showCustomNotification,
+  saveNotificationSettings,
+  getNotificationSettings,
+  scheduleSmartNotifications,
+  generateSmartNotifications,
+  requestNotificationPermission,
+  sendTestNotification
 };
+
+// =================================
+// Firebase Cloud Messaging 기능
+// =================================
+
+// FCM 초기화
+async function initializeMessaging() {
+  if (!messaging) return;
+
+  try {
+    // 알림 권한 요청
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') {
+      console.log('알림 권한이 거부되었습니다.');
+      return;
+    }
+
+    // 서비스 워커 등록
+    const registration = await navigator.serviceWorker.register('/sw.js');
+    
+    // FCM 토큰 가져오기
+    const token = await getToken(messaging, {
+      vapidKey: "your-vapid-key-here", // Firebase 콘솔에서 생성한 VAPID 키
+      serviceWorkerRegistration: registration
+    });
+
+    if (token) {
+      console.log('FCM 토큰 생성 성공:', token);
+      await saveFCMToken(token);
+    } else {
+      console.log('FCM 토큰 생성 실패');
+    }
+
+    // 포그라운드 메시지 리스너
+    onMessage(messaging, (payload) => {
+      console.log('포그라운드 메시지 수신:', payload);
+      
+      const { title, body, icon, data } = payload.notification || {};
+      
+      if (title && body) {
+        showCustomNotification({
+          title,
+          body,
+          icon: icon || '/icons/icon-192x192.png',
+          data: data || {}
+        });
+      }
+    });
+
+  } catch (error) {
+    console.error('FCM 초기화 실패:', error);
+  }
+}
+
+// FCM 토큰 저장
+async function saveFCMToken(token) {
+  if (!currentUser) return;
+
+  try {
+    await setDoc(doc(db, 'users', currentUser.uid), {
+      fcmToken: token,
+      tokenUpdatedAt: serverTimestamp()
+    }, { merge: true });
+
+    console.log('FCM 토큰 저장 성공');
+  } catch (error) {
+    console.error('FCM 토큰 저장 실패:', error);
+  }
+}
+
+// 맞춤 알림 표시
+function showCustomNotification({ title, body, icon, data }) {
+  if (!('Notification' in window)) return;
+
+  const notification = new Notification(title, {
+    body,
+    icon,
+    badge: '/icons/icon-72x72.png',
+    tag: 'saju-notification',
+    vibrate: [200, 100, 200],
+    data
+  });
+
+  notification.onclick = function(event) {
+    event.preventDefault();
+    window.focus();
+    notification.close();
+    
+    if (data.url) {
+      window.location.href = data.url;
+    }
+  };
+
+  setTimeout(() => notification.close(), 8000);
+}
+
+// 알림 설정 저장
+async function saveNotificationSettings(settings) {
+  if (!currentUser) {
+    throw new Error('로그인이 필요합니다.');
+  }
+
+  try {
+    await setDoc(doc(db, 'users', currentUser.uid, 'settings', 'notifications'), {
+      ...settings,
+      updatedAt: serverTimestamp()
+    });
+
+    console.log('알림 설정 저장 성공');
+    return { success: true };
+  } catch (error) {
+    console.error('알림 설정 저장 실패:', error);
+    throw error;
+  }
+}
+
+// 알림 설정 불러오기
+async function getNotificationSettings() {
+  if (!currentUser) return null;
+
+  try {
+    const settingsDoc = await getDoc(doc(db, 'users', currentUser.uid, 'settings', 'notifications'));
+    
+    if (settingsDoc.exists()) {
+      return settingsDoc.data();
+    }
+    
+    // 기본 설정
+    return {
+      luckyDay: true,
+      fortuneChange: true,
+      drawNotification: true,
+      solarTerm: true,
+      winningCheck: true,
+      time: '09:00'
+    };
+  } catch (error) {
+    console.error('알림 설정 불러오기 실패:', error);
+    return null;
+  }
+}
+
+// 스마트 알림 스케줄링
+async function scheduleSmartNotifications(sajuData, fortuneData) {
+  if (!messaging || !currentUser) return;
+
+  try {
+    const notificationData = generateSmartNotifications(sajuData, fortuneData);
+    
+    await setDoc(doc(db, 'users', currentUser.uid, 'scheduledNotifications', 'smart'), {
+      notifications: notificationData,
+      scheduledAt: serverTimestamp(),
+      sajuSnapshot: {
+        dayPillar: sajuData.pillars?.day,
+        dominantElement: sajuData.dominantElement
+      },
+      fortuneSnapshot: {
+        overallScore: fortuneData.overallFortune?.score,
+        level: fortuneData.overallFortune?.level?.level
+      }
+    });
+
+    console.log('스마트 알림 스케줄링 완료');
+    return { success: true };
+  } catch (error) {
+    console.error('스마트 알림 스케줄링 실패:', error);
+    throw error;
+  }
+}
+
+// 스마트 알림 생성
+function generateSmartNotifications(sajuData, fortuneData) {
+  const notifications = [];
+  const today = new Date();
+  const dayPillar = sajuData.pillars?.day;
+  const fortuneLevel = fortuneData.overallFortune?.level?.level;
+
+  // 길한 날짜 알림
+  if (dayPillar && fortuneLevel === 'excellent') {
+    notifications.push({
+      type: 'lucky_day',
+      title: '🌟 길한 날입니다!',
+      body: `${dayPillar.stem}${dayPillar.branch}일주인 당신에게 특별한 날입니다. 행운의 번호를 확인해보세요.`,
+      scheduledTime: getNextLuckyTime(),
+      data: { action: 'generate', source: 'lucky_day' }
+    });
+  }
+
+  // 대운 변화 알림
+  const greatLuckChange = fortuneData.greatLuck?.isChanging;
+  if (greatLuckChange) {
+    notifications.push({
+      type: 'fortune_change',
+      title: '🔄 대운의 변화',
+      body: '새로운 대운이 시작됩니다. 운세에 맞는 특별한 번호를 생성해보세요.',
+      scheduledTime: addDays(today, 1),
+      data: { action: 'fortune', source: 'great_luck_change' }
+    });
+  }
+
+  // 24절기 알림
+  const solarTerm = fortuneData.solarTerm?.upcoming;
+  if (solarTerm) {
+    notifications.push({
+      type: 'solar_term',
+      title: `🌱 ${solarTerm.name}`,
+      body: `${solarTerm.name}입니다. 새로운 기운으로 행운의 번호를 만들어보세요.`,
+      scheduledTime: solarTerm.date,
+      data: { action: 'generate', source: 'solar_term' }
+    });
+  }
+
+  // 당첨번호 발표 알림 (매주 토요일 저녁)
+  const nextSaturday = getNextSaturday();
+  notifications.push({
+    type: 'draw_notification',
+    title: '🎯 당첨번호 발표',
+    body: '이번 주 당첨번호와 당신의 사주 궁합을 확인해보세요.',
+    scheduledTime: nextSaturday,
+    data: { action: 'check', source: 'weekly_draw' }
+  });
+
+  return notifications;
+}
+
+// 다음 행운의 시간 계산
+function getNextLuckyTime() {
+  const now = new Date();
+  const luckyTime = new Date(now);
+  
+  // 오전 9시로 설정
+  luckyTime.setHours(9, 0, 0, 0);
+  
+  if (luckyTime <= now) {
+    luckyTime.setDate(luckyTime.getDate() + 1);
+  }
+  
+  return luckyTime;
+}
+
+// 다음 토요일 계산
+function getNextSaturday() {
+  const now = new Date();
+  const saturday = new Date(now);
+  const daysUntilSaturday = 6 - now.getDay();
+  
+  if (daysUntilSaturday === 0 && now.getHours() >= 21) {
+    // 토요일 밤 9시 이후면 다음 주 토요일
+    saturday.setDate(saturday.getDate() + 7);
+  } else if (daysUntilSaturday <= 0) {
+    saturday.setDate(saturday.getDate() + 7 + daysUntilSaturday);
+  } else {
+    saturday.setDate(saturday.getDate() + daysUntilSaturday);
+  }
+  
+  saturday.setHours(21, 0, 0, 0); // 밤 9시
+  return saturday;
+}
+
+// 날짜 더하기 유틸리티
+function addDays(date, days) {
+  const result = new Date(date);
+  result.setDate(result.getDate() + days);
+  return result;
+}
+
+// 알림 권한 재요청
+async function requestNotificationPermission() {
+  if (!('Notification' in window)) {
+    return { granted: false, error: '브라우저가 알림을 지원하지 않습니다.' };
+  }
+
+  try {
+    const permission = await Notification.requestPermission();
+    
+    if (permission === 'granted') {
+      // FCM 토큰 재생성
+      if (messaging) {
+        const token = await getToken(messaging, {
+          vapidKey: "your-vapid-key-here"
+        });
+        
+        if (token) {
+          await saveFCMToken(token);
+        }
+      }
+      
+      return { granted: true };
+    } else {
+      return { granted: false, error: '알림 권한이 거부되었습니다.' };
+    }
+  } catch (error) {
+    return { granted: false, error: error.message };
+  }
+}
+
+// 테스트 알림 발송
+function sendTestNotification() {
+  if (!('Notification' in window)) {
+    alert('브라우저가 알림을 지원하지 않습니다.');
+    return;
+  }
+
+  if (Notification.permission !== 'granted') {
+    alert('알림 권한이 필요합니다.');
+    return;
+  }
+
+  showCustomNotification({
+    title: '🏮 사주로또 테스트 알림',
+    body: '알림이 정상적으로 작동합니다! 이제 맞춤 알림을 받아보세요.',
+    icon: '/icons/icon-192x192.png',
+    data: { test: true }
+  });
+}
 
 console.log('Firebase 설정 완료');

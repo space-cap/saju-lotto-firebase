@@ -1,0 +1,122 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 사용자 개인 데이터 규칙
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      
+      // 사용자 로또 번호 컬렉션
+      match /lottoNumbers/{document} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+      
+      // 사용자 운세 패턴 컬렉션
+      match /fortunePatterns/{document} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+      
+      // 사용자 운세 번호 결과 컬렉션
+      match /fortuneNumberResults/{document} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+      
+      // 사용자 개인 분석 데이터
+      match /analysis/{document} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+      
+      // 사용자 설정
+      match /settings/{document} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+      
+      // 사용자 예약된 알림
+      match /scheduledNotifications/{document} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+    
+    // 당첨 번호 데이터 (모든 사용자가 읽기 가능, 관리자만 쓰기 가능)
+    match /winningNumbers/{document} {
+      allow read: if true;
+      allow write: if request.auth != null && 
+                      (request.auth.token.admin == true || 
+                       request.auth.uid in resource.data.authorizedUsers);
+    }
+    
+    // 공용 설정 데이터 (읽기 전용)
+    match /publicConfig/{document} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.token.admin == true;
+    }
+    
+    // 사주 해석 템플릿 (읽기 전용)
+    match /sajuTemplates/{document} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.token.admin == true;
+    }
+    
+    // 24절기 데이터 (읽기 전용)
+    match /solarTerms/{document} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.token.admin == true;
+    }
+    
+    // 통계 데이터 (읽기 전용)
+    match /statistics/{document} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.token.admin == true;
+    }
+    
+    // 시스템 로그 (관리자만 접근)
+    match /systemLogs/{document} {
+      allow read, write: if request.auth != null && request.auth.token.admin == true;
+    }
+    
+    // 사용자 피드백
+    match /feedback/{document} {
+      allow create: if request.auth != null;
+      allow read, update, delete: if request.auth != null && 
+                                    (request.auth.uid == resource.data.userId ||
+                                     request.auth.token.admin == true);
+    }
+    
+    // 앱 버전 정보 (읽기 전용)
+    match /appVersion/{document} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.token.admin == true;
+    }
+  }
+}
+
+// 헬퍼 함수들
+function isOwner(userId) {
+  return request.auth != null && request.auth.uid == userId;
+}
+
+function isAdmin() {
+  return request.auth != null && request.auth.token.admin == true;
+}
+
+function isAuthenticated() {
+  return request.auth != null;
+}
+
+function validateUserData(data) {
+  return data.keys().hasAll(['email', 'updatedAt']) &&
+         data.email is string &&
+         data.updatedAt is timestamp;
+}
+
+function validateLottoNumbers(data) {
+  return data.keys().hasAll(['numbers', 'createdAt']) &&
+         data.numbers is list &&
+         data.numbers.size() == 6 &&
+         data.createdAt is timestamp;
+}
+
+function validateFortuneData(data) {
+  return data.keys().hasAll(['date', 'timestamp']) &&
+         data.date is string &&
+         data.timestamp is timestamp;
+}

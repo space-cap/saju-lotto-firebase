@@ -1,0 +1,17 @@
+{
+  "projects": {
+    "default": "your-firebase-project-id",
+    "staging": "your-firebase-project-id-staging",
+    "production": "your-firebase-project-id-prod"
+  },
+  "targets": {
+    "your-firebase-project-id": {
+      "hosting": {
+        "saju-lotto": [
+          "your-firebase-project-id"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}
