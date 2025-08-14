@@ -703,7 +703,15 @@
         </div>
     </div>
 
-    <script type="module" src="firebase-config.js"></script>
+    <!-- Firebase App (the core Firebase SDK) is always required and must be listed first -->
+    <script src="https://www.gstatic.com/firebasejs/12.1.0/firebase-app-compat.js"></script>
+    
+    <!-- Add Firebase products that you want to use -->
+    <script src="https://www.gstatic.com/firebasejs/12.1.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.1.0/firebase-messaging-compat.js"></script>
+    
+    <script src="firebase-config.js"></script>
     <script src="saju-engine.js"></script>
     <script src="offline-cache.js"></script>
     <script src="notification-manager.js"></script>

@@ -1,8 +1,4 @@
-// Firebase 설정 및 초기화
-import { initializeApp } from 'firebase/app';
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from 'firebase/auth';
-import { getFirestore, collection, addDoc, getDocs, query, orderBy, deleteDoc, doc, setDoc, getDoc, where, onSnapshot, limit, serverTimestamp } from 'firebase/firestore';
-import { getMessaging, getToken, onMessage, isSupported } from 'firebase/messaging';
+// Firebase 설정 및 초기화 (compat 버전 사용)
 
 // Firebase 구성 정보 (실제 프로젝트에서는 환경변수 사용 권장)
 const firebaseConfig = {
@@ -16,25 +12,21 @@ const firebaseConfig = {
 };
 
 // Firebase 앱 초기화
-const app = initializeApp(firebaseConfig);
+const app = firebase.initializeApp(firebaseConfig);
 
 // Firebase 서비스 초기화
-const auth = getAuth(app);
-const db = getFirestore(app);
+const auth = firebase.auth();
+const db = firebase.firestore();
 let messaging = null;
 
 // FCM 초기화 (지원되는 경우에만)
-if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
-  isSupported().then(supported => {
-    if (supported) {
-      messaging = getMessaging(app);
-      initializeMessaging();
-    }
-  });
+if (typeof window !== 'undefined' && 'serviceWorker' in navigator && firebase.messaging.isSupported()) {
+  messaging = firebase.messaging();
+  initializeMessaging();
 }
 
 // Google 인증 제공자 설정
-const googleProvider = new GoogleAuthProvider();
+const googleProvider = new firebase.auth.GoogleAuthProvider();
 googleProvider.setCustomParameters({
   prompt: 'select_account'
 });
@@ -44,7 +36,7 @@ let currentUser = null;
 let currentUserSaju = null; // 사용자 사주 정보 캐시
 
 // 인증 상태 변화 감지
-onAuthStateChanged(auth, (user) => {
+auth.onAuthStateChanged((user) => {
   currentUser = user;
   updateUIForAuthState(user);
 });
@@ -96,7 +88,7 @@ function updateUIForAuthState(user) {
 // 이메일/비밀번호 회원가입
 async function signUpWithEmail(email, password) {
   try {
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    const userCredential = await auth.createUserWithEmailAndPassword(email, password);
     console.log('회원가입 성공:', userCredential.user);
     return { success: true, user: userCredential.user };
   } catch (error) {
@@ -122,7 +114,7 @@ async function signUpWithEmail(email, password) {
 // 이메일/비밀번호 로그인
 async function signInWithEmail(email, password) {
   try {
-    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    const userCredential = await auth.signInWithEmailAndPassword(email, password);
     console.log('로그인 성공:', userCredential.user);
     return { success: true, user: userCredential.user };
   } catch (error) {
@@ -151,7 +143,7 @@ async function signInWithEmail(email, password) {
 // Google 로그인
 async function signInWithGoogle() {
   try {
-    const result = await signInWithPopup(auth, googleProvider);
+    const result = await auth.signInWithPopup(googleProvider);
     console.log('Google 로그인 성공:', result.user);
     return { success: true, user: result.user };
   } catch (error) {
@@ -169,7 +161,7 @@ async function signInWithGoogle() {
 // 로그아웃
 async function signOutUser() {
   try {
-    await signOut(auth);
+    await auth.signOut();
     console.log('로그아웃 성공');
     return { success: true };
   } catch (error) {
@@ -185,8 +177,8 @@ async function saveSajuProfile(sajuData) {
   }
   
   try {
-    const userProfileRef = doc(db, 'users', currentUser.uid);
-    await setDoc(userProfileRef, {
+    const userProfileRef = db.collection('users').doc(currentUser.uid);
+    await userProfileRef.set({
       email: currentUser.email,
       sajuProfile: sajuData,
       updatedAt: new Date().toISOString()
@@ -207,10 +199,10 @@ async function getSajuProfile() {
   }
   
   try {
-    const userProfileRef = doc(db, 'users', currentUser.uid);
-    const profileSnap = await getDoc(userProfileRef);
+    const userProfileRef = db.collection('users').doc(currentUser.uid);
+    const profileSnap = await userProfileRef.get();
     
-    if (profileSnap.exists()) {
+    if (profileSnap.exists) {
       return profileSnap.data().sajuProfile || null;
     }
     return null;
@@ -228,7 +220,7 @@ async function saveLottoNumbers(numbersData) {
   
   try {
     const lottoCollection = collection(db, 'users', currentUser.uid, 'lottoNumbers');
-    const docRef = await addDoc(lottoCollection, {
+    const docRef = await lottoCollection.add({
       ...numbersData,
       userId: currentUser.uid,
       createdAt: new Date().toISOString()
@@ -250,8 +242,8 @@ async function getSavedLottoNumbers() {
   
   try {
     const lottoCollection = collection(db, 'users', currentUser.uid, 'lottoNumbers');
-    const q = query(lottoCollection, orderBy('createdAt', 'desc'));
-    const querySnapshot = await getDocs(q);
+    const q = lottoCollection.orderBy('createdAt', 'desc');
+    const querySnapshot = await q.get();
     
     const numbers = [];
     querySnapshot.forEach((doc) => {
@@ -275,7 +267,7 @@ async function deleteLottoNumbers(docId) {
   }
   
   try {
-    await deleteDoc(doc(db, 'users', currentUser.uid, 'lottoNumbers', docId));
+    await db.collection('users').doc(currentUser.uid).collection('lottoNumbers').doc(docId).delete();
     console.log('로또 번호 삭제 성공');
     return { success: true };
   } catch (error) {
@@ -480,11 +472,11 @@ function fillSajuForm(profile) {
 // 당첨 번호 저장 (관리자용)
 async function saveWinningNumbers(winningData) {
   try {
-    const winningCollection = collection(db, 'winningNumbers');
-    const docRef = await addDoc(winningCollection, {
+    const winningCollection = db.collection('winningNumbers');
+    const docRef = await winningCollection.add({
       ...winningData,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp()
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     });
     
     console.log('당첨 번호 저장 성공, ID:', docRef.id);
@@ -498,9 +490,9 @@ async function saveWinningNumbers(winningData) {
 // 최신 당첨 번호 가져오기
 async function getLatestWinningNumbers(limitCount = 10) {
   try {
-    const winningCollection = collection(db, 'winningNumbers');
-    const q = query(winningCollection, orderBy('drawDate', 'desc'), limit(limitCount));
-    const querySnapshot = await getDocs(q);
+    const winningCollection = db.collection('winningNumbers');
+    const q = winningCollection.orderBy('drawDate', 'desc').limit(limitCount);
+    const querySnapshot = await q.get();
     
     const winnings = [];
     querySnapshot.forEach((doc) => {
@@ -519,10 +511,10 @@ async function getLatestWinningNumbers(limitCount = 10) {
 
 // 실시간 당첨 번호 리스너
 function listenToWinningNumbers(callback) {
-  const winningCollection = collection(db, 'winningNumbers');
-  const q = query(winningCollection, orderBy('drawDate', 'desc'), limit(5));
+  const winningCollection = db.collection('winningNumbers');
+  const q = winningCollection.orderBy('drawDate', 'desc').limit(5);
   
-  return onSnapshot(q, (snapshot) => {
+  return q.onSnapshot((snapshot) => {
     const winnings = [];
     snapshot.forEach((doc) => {
       winnings.push({
@@ -722,7 +714,7 @@ async function saveUserFortunePattern(fortuneData, recommendation) {
       timestamp: serverTimestamp()
     };
     
-    const docRef = await addDoc(collection(db, 'users', currentUser.uid, 'fortunePatterns'), fortunePattern);
+    const docRef = await db.collection('users').doc(currentUser.uid).collection('fortunePatterns').add(fortunePattern);
     console.log('운세 패턴 저장 성공:', docRef.id);
     return { success: true, id: docRef.id };
   } catch (error) {
@@ -750,7 +742,7 @@ async function saveFortuneNumberResult(numbers, fortuneData, actualResult = null
       timestamp: serverTimestamp()
     };
     
-    const docRef = await addDoc(collection(db, 'users', currentUser.uid, 'fortuneNumberResults'), result);
+    const docRef = await db.collection('users').doc(currentUser.uid).collection('fortuneNumberResults').add(result);
     console.log('운세 번호 결과 저장 성공:', docRef.id);
     return { success: true, id: docRef.id };
   } catch (error) {
@@ -776,11 +768,11 @@ async function savePersonalAnalysis(analysisData) {
       coreStrategy: analysisData.coreStrategy,
       cycleStrategy: analysisData.cycleStrategy,
       specialOpportunity: analysisData.specialOpportunity,
-      lastUpdated: serverTimestamp(),
+      lastUpdated: firebase.firestore.FieldValue.serverTimestamp(),
       version: '1.0'
     };
     
-    await setDoc(doc(db, 'users', currentUser.uid, 'analysis', 'personal'), analysis);
+    await db.collection('users').doc(currentUser.uid).collection('analysis').doc('personal').set(analysis);
     console.log('개인 분석 저장 성공');
     return { success: true };
   } catch (error) {
@@ -796,8 +788,8 @@ async function loadPersonalAnalysis() {
   }
   
   try {
-    const docRef = doc(db, 'users', currentUser.uid, 'analysis', 'personal');
-    const docSnap = await getDoc(docRef);
+    const docRef = db.collection('users').doc(currentUser.uid).collection('analysis').doc('personal');
+    const docSnap = await docRef.get();
     
     if (docSnap.exists()) {
       console.log('개인 분석 불러오기 성공');
@@ -819,13 +811,11 @@ async function getFortunePatternHistory(limit = 30) {
   }
   
   try {
-    const q = query(
-      collection(db, 'users', currentUser.uid, 'fortunePatterns'),
-      orderBy('timestamp', 'desc'),
-      limit(limit)
-    );
+    const q = db.collection('users').doc(currentUser.uid).collection('fortunePatterns')
+      .orderBy('timestamp', 'desc')
+      .limit(limit);
     
-    const querySnapshot = await getDocs(q);
+    const querySnapshot = await q.get();
     const patterns = [];
     
     querySnapshot.forEach((doc) => {
@@ -848,13 +838,11 @@ async function getFortuneNumberResults(limit = 10) {
   if (!currentUser) return [];
   
   try {
-    const q = query(
-      collection(db, 'users', currentUser.uid, 'fortuneNumberResults'),
-      orderBy('timestamp', 'desc'),
-      limit(limit)
-    );
+    const q = db.collection('users').doc(currentUser.uid).collection('fortuneNumberResults')
+      .orderBy('timestamp', 'desc')
+      .limit(limit);
     
-    const querySnapshot = await getDocs(q);
+    const querySnapshot = await q.get();
     const results = [];
     
     querySnapshot.forEach((doc) => {
@@ -974,9 +962,9 @@ async function saveFCMToken(token) {
   if (!currentUser) return;
 
   try {
-    await setDoc(doc(db, 'users', currentUser.uid), {
+    await db.collection('users').doc(currentUser.uid).set({
       fcmToken: token,
-      tokenUpdatedAt: serverTimestamp()
+      tokenUpdatedAt: firebase.firestore.FieldValue.serverTimestamp()
     }, { merge: true });
 
     console.log('FCM 토큰 저장 성공');
@@ -1018,9 +1006,9 @@ async function saveNotificationSettings(settings) {
   }
 
   try {
-    await setDoc(doc(db, 'users', currentUser.uid, 'settings', 'notifications'), {
+    await db.collection('users').doc(currentUser.uid).collection('settings').doc('notifications').set({
       ...settings,
-      updatedAt: serverTimestamp()
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     });
 
     console.log('알림 설정 저장 성공');
@@ -1036,7 +1024,7 @@ async function getNotificationSettings() {
   if (!currentUser) return null;
 
   try {
-    const settingsDoc = await getDoc(doc(db, 'users', currentUser.uid, 'settings', 'notifications'));
+    const settingsDoc = await db.collection('users').doc(currentUser.uid).collection('settings').doc('notifications').get();
     
     if (settingsDoc.exists()) {
       return settingsDoc.data();
@@ -1064,9 +1052,9 @@ async function scheduleSmartNotifications(sajuData, fortuneData) {
   try {
     const notificationData = generateSmartNotifications(sajuData, fortuneData);
     
-    await setDoc(doc(db, 'users', currentUser.uid, 'scheduledNotifications', 'smart'), {
+    await db.collection('users').doc(currentUser.uid).collection('scheduledNotifications').doc('smart').set({
       notifications: notificationData,
-      scheduledAt: serverTimestamp(),
+      scheduledAt: firebase.firestore.FieldValue.serverTimestamp(),
       sajuSnapshot: {
         dayPillar: sajuData.pillars?.day,
         dominantElement: sajuData.dominantElement
