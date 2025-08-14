@@ -138,9 +138,26 @@ async function handleGoogleLogin() {
     googleBtn.textContent = '처리 중...';
     
     try {
-        if (!window.firebaseAuth || !window.firebaseAuth.signInWithGoogle) {
+        // Firebase Auth 초기화 확인
+        if (!window.firebaseAuthReady || !window.firebaseAuth) {
+            console.error('Firebase 초기화 상태:', {
+                firebaseAuthReady: window.firebaseAuthReady,
+                firebaseAuth: !!window.firebaseAuth,
+                firebaseAuthKeys: window.firebaseAuth ? Object.keys(window.firebaseAuth) : 'N/A'
+            });
             throw new Error('Firebase 인증이 아직 초기화되지 않았습니다. 잠시 후 다시 시도해주세요.');
         }
+        
+        // signInWithGoogle 함수 확인
+        if (typeof window.firebaseAuth.signInWithGoogle !== 'function') {
+            console.error('signInWithGoogle 함수가 정의되지 않았습니다:', {
+                firebaseAuth: window.firebaseAuth,
+                signInWithGoogle: window.firebaseAuth.signInWithGoogle,
+                type: typeof window.firebaseAuth.signInWithGoogle
+            });
+            throw new Error('Google 로그인 기능을 불러오는 중입니다. 잠시 후 다시 시도해주세요.');
+        }
+        
         const result = await window.firebaseAuth.signInWithGoogle();
         
         if (result.success) {

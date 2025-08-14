@@ -1219,6 +1219,14 @@ function sendTestNotification() {
   });
 }
 
+// 초기화 완료 로깅 및 확인
 console.log('Firebase 설정 완료');
+console.log('Firebase app:', app);
+console.log('Firebase auth:', auth);
+console.log('Google provider:', googleProvider);
 console.log('window.firebaseAuth 객체:', window.firebaseAuth);
 console.log('signInWithGoogle 함수:', window.firebaseAuth?.signInWithGoogle);
+console.log('signInWithGoogle 타입:', typeof window.firebaseAuth?.signInWithGoogle);
+
+// 전역 변수로도 노출 (호환성을 위해)
+window.firebaseAuthReady = true;
