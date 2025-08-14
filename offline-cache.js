@@ -336,6 +336,11 @@ class OfflineCache {
   // 데이터 조회
   async getData(storeName, key) {
     return new Promise((resolve, reject) => {
+      if (!this.db) {
+        reject(new Error('Database not initialized'));
+        return;
+      }
+      
       const transaction = this.db.transaction([storeName], 'readonly');
       const store = transaction.objectStore(storeName);
       const request = store.get(key);

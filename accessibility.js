@@ -334,6 +334,80 @@ class AccessibilityManager {
     });
   }
 
+  setupFocusManagement() {
+    // 포커스 관리 기본 설정
+    this.currentFocusIndex = -1;
+    
+    // 포커스 트랩 설정 (모달이 열렸을 때)
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Tab') {
+        const modal = document.querySelector('.modal:not([style*="display: none"])');
+        if (modal) {
+          this.trapFocus(event, modal);
+        }
+      }
+    });
+    
+    // 메인 콘텐츠로 건너뛰기 링크 추가
+    this.addSkipToMainLink();
+  }
+  
+  trapFocus(event, container) {
+    const focusableElements = container.querySelectorAll(
+      'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])'
+    );
+    
+    if (focusableElements.length === 0) return;
+    
+    const firstElement = focusableElements[0];
+    const lastElement = focusableElements[focusableElements.length - 1];
+    
+    if (event.shiftKey && document.activeElement === firstElement) {
+      event.preventDefault();
+      lastElement.focus();
+    } else if (!event.shiftKey && document.activeElement === lastElement) {
+      event.preventDefault();
+      firstElement.focus();
+    }
+  }
+  
+  addSkipToMainLink() {
+    if (document.querySelector('#skip-to-main')) return;
+    
+    const skipLink = document.createElement('a');
+    skipLink.id = 'skip-to-main';
+    skipLink.href = '#main-content';
+    skipLink.textContent = '메인 콘텐츠로 건너뛰기';
+    skipLink.className = 'sr-only-focusable';
+    skipLink.style.cssText = `
+      position: absolute;
+      top: -40px;
+      left: 6px;
+      background: #000;
+      color: #fff;
+      padding: 8px;
+      text-decoration: none;
+      z-index: 9999;
+      transition: top 0.3s;
+    `;
+    
+    skipLink.addEventListener('focus', () => {
+      skipLink.style.top = '6px';
+    });
+    
+    skipLink.addEventListener('blur', () => {
+      skipLink.style.top = '-40px';
+    });
+    
+    document.body.insertBefore(skipLink, document.body.firstChild);
+    
+    // 메인 콘텐츠에 ID 추가
+    const mainContent = document.querySelector('main, .container, #app, .app');
+    if (mainContent && !mainContent.id) {
+      mainContent.id = 'main-content';
+    }
+  }
+
   updateFocusableElements() {
     const selectors = [
       'button:not([disabled])',

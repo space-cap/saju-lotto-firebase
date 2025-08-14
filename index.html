@@ -498,13 +498,13 @@
                             <div class="date-input-container">
                                 <input type="date" id="birth-date" name="birth-date" required class="form-input date-input">
                                 <div class="calendar-type">
-                                    <label class="radio-label">
-                                        <input type="radio" name="calendar-type" value="solar" checked>
+                                    <label class="radio-label" for="calendar-solar">
+                                        <input type="radio" id="calendar-solar" name="calendar-type" value="solar" checked>
                                         <span class="radio-custom"></span>
                                         양력
                                     </label>
-                                    <label class="radio-label">
-                                        <input type="radio" name="calendar-type" value="lunar">
+                                    <label class="radio-label" for="calendar-lunar">
+                                        <input type="radio" id="calendar-lunar" name="calendar-type" value="lunar">
                                         <span class="radio-custom"></span>
                                         음력
                                     </label>
@@ -536,13 +536,13 @@
                         <div class="form-group">
                             <label class="form-label">성별</label>
                             <div class="gender-selection">
-                                <label class="radio-label gender-label">
-                                    <input type="radio" name="gender" value="male" required>
+                                <label class="radio-label gender-label" for="gender-male">
+                                    <input type="radio" id="gender-male" name="gender" value="male" required>
                                     <span class="radio-custom"></span>
                                     <span class="gender-text">남성 (乾)</span>
                                 </label>
-                                <label class="radio-label gender-label">
-                                    <input type="radio" name="gender" value="female" required>
+                                <label class="radio-label gender-label" for="gender-female">
+                                    <input type="radio" id="gender-female" name="gender" value="female" required>
                                     <span class="radio-custom"></span>
                                     <span class="gender-text">여성 (坤)</span>
                                 </label>
@@ -669,11 +669,11 @@
                     </div>
                     <div class="form-group">
                         <label for="auth-password" class="form-label">비밀번호</label>
-                        <input type="password" id="auth-password" required class="form-input">
+                        <input type="password" id="auth-password" required class="form-input" autocomplete="new-password">
                     </div>
                     <div id="confirm-password-group" class="form-group hidden">
                         <label for="auth-password-confirm" class="form-label">비밀번호 확인</label>
-                        <input type="password" id="auth-password-confirm" class="form-input">
+                        <input type="password" id="auth-password-confirm" class="form-input" autocomplete="new-password">
                     </div>
                     
                     <button type="submit" id="auth-submit-btn" class="auth-submit-btn">
