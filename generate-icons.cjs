@@ -2,6 +2,13 @@
 const fs = require('fs');
 const path = require('path');
 
+// Create a simple PNG icon using Canvas API fallback
+function createPNGIconData(size) {
+  // For now, copy the existing PNG file or create a placeholder
+  const baseIcon = path.join(__dirname, 'icons', 'icon-72x72.png');
+  return baseIcon;
+}
+
 // Create a simple SVG icon
 function createSVGIcon(size, text = '사주') {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">

@@ -347,21 +347,31 @@ class OfflineCache {
   async getData(storeName, key) {
     // 데이터베이스 초기화 대기
     if (!this.db) {
-      await this.initDB();
+      try {
+        await this.initDB();
+      } catch (error) {
+        console.error('Database initialization failed:', error);
+        return null;
+      }
     }
     
     return new Promise((resolve, reject) => {
       if (!this.db) {
-        reject(new Error('Database not initialized'));
+        console.warn('Database still not available');
+        resolve(null);
         return;
       }
       
-      const transaction = this.db.transaction([storeName], 'readonly');
-      const store = transaction.objectStore(storeName);
-      const request = store.get(key);
-      
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error);
+        const transaction = this.db.transaction([storeName], 'readonly');
+        const store = transaction.objectStore(storeName);
+        const request = store.get(key);
+        
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      } catch (error) {
+        console.error('Transaction error:', error);
+        resolve(null);
+      }
     });
   }
 
