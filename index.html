@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,25 +12,27 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="사주로또">
-    
+
     <!-- Open Graph -->
     <meta property="og:title" content="사주명리 로또번호 생성기">
     <meta property="og:description" content="전통 사주명리학으로 만나는 당신만의 행운번호">
     <meta property="og:type" content="website">
     <meta property="og:image" content="/saju-lotto-firebase/icons/icon-512x512.png">
     <meta property="og:url" content="https://your-domain.com">
-    
+
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="사주명리 로또번호 생성기">
     <meta name="twitter:description" content="전통 사주명리학으로 만나는 당신만의 행운번호">
     <meta name="twitter:image" content="/saju-lotto-firebase/icons/icon-512x512.png">
-    
+
     <title>사주로 만나는 행운의 번호</title>
-    <link rel="manifest" href="/saju-lotto-firebase/manifest.json">
+    <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Nanum+Myeongjo:wght@400;700;800&display=swap" rel="stylesheet">
-    
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Nanum+Myeongjo:wght@400;700;800&display=swap"
+        rel="stylesheet">
+
     <!-- PWA Icons -->
     <link rel="icon" type="image/png" sizes="72x72" href="/saju-lotto-firebase/icons/icon-72x72.png">
     <link rel="icon" type="image/png" sizes="96x96" href="/saju-lotto-firebase/icons/icon-96x96.png">
@@ -40,7 +43,7 @@
     <link rel="icon" type="image/png" sizes="384x384" href="/saju-lotto-firebase/icons/icon-384x384.png">
     <link rel="icon" type="image/png" sizes="512x512" href="/saju-lotto-firebase/icons/icon-512x512.png">
     <link rel="apple-touch-icon" href="/saju-lotto-firebase/icons/icon-192x192.png">
-    
+
     <!-- Structured Data -->
     <script type="application/ld+json">
     {
@@ -61,6 +64,7 @@
     }
     </script>
 </head>
+
 <body>
     <div class="container">
         <!-- 헤더 -->
@@ -97,7 +101,7 @@
                         🌟 오늘의 사주 운세
                         <span class="today-date" id="today-date"></span>
                     </h2>
-                    
+
                     <!-- 종합 운세 요약 -->
                     <div class="fortune-summary">
                         <div class="fortune-score-card">
@@ -107,7 +111,7 @@
                             </div>
                             <div class="score-description" id="fortune-description">운세를 분석하고 있습니다...</div>
                         </div>
-                        
+
                         <div class="current-terms">
                             <div class="solar-term">
                                 <label>현재 절기:</label>
@@ -119,7 +123,7 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- 사주 운세 상세 -->
                     <div class="fortune-details">
                         <!-- 대운 정보 -->
@@ -131,7 +135,7 @@
                                 <div class="luck-influence" id="great-luck-influence">분석 중...</div>
                             </div>
                         </div>
-                        
+
                         <!-- 세운 정보 -->
                         <div class="fortune-card yearly-luck">
                             <h3>올해 세운 (歲運)</h3>
@@ -141,7 +145,7 @@
                                 <div class="luck-influence" id="yearly-luck-influence">분석 중...</div>
                             </div>
                         </div>
-                        
+
                         <!-- 월운 정보 -->
                         <div class="fortune-card monthly-luck">
                             <h3>이번 달 월운 (月運)</h3>
@@ -151,7 +155,7 @@
                                 <div class="luck-influence" id="monthly-luck-influence">분석 중...</div>
                             </div>
                         </div>
-                        
+
                         <!-- 일운 정보 -->
                         <div class="fortune-card daily-luck">
                             <h3>오늘 일운 (日運)</h3>
@@ -162,7 +166,7 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- 오행 에너지 시각화 -->
                     <div class="element-energy">
                         <h3>오늘의 오행 에너지</h3>
@@ -204,7 +208,7 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- 운세 기반 추천 번호 -->
                     <div class="fortune-numbers">
                         <h3>오늘의 운세 추천 번호</h3>
@@ -218,7 +222,7 @@
                                     신뢰도: <span id="fortune-confidence">0%</span>
                                 </div>
                             </div>
-                            
+
                             <div class="number-set time-based">
                                 <h4>⏰ 시간 기반 번호</h4>
                                 <div class="number-balls" id="time-based-numbers">
@@ -230,7 +234,7 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- 운세 추천사항 -->
                     <div class="fortune-recommendations">
                         <h3>오늘의 운세 조언</h3>
@@ -252,7 +256,7 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- 대시보드 액션 버튼 -->
                     <div class="dashboard-actions">
                         <button class="fortune-action-btn refresh-btn" onclick="refreshFortuneDashboard()">
@@ -272,7 +276,7 @@
             <section class="fortune-calendar" id="fortune-calendar" style="display: none;">
                 <div class="calendar-container">
                     <h2 class="section-title">🗓️ 내 운세 달력</h2>
-                    
+
                     <!-- 달력 네비게이션 -->
                     <div class="calendar-nav">
                         <button class="nav-btn prev-month" onclick="changeMonth(-1)">‹</button>
@@ -281,7 +285,7 @@
                         </div>
                         <button class="nav-btn next-month" onclick="changeMonth(1)">›</button>
                     </div>
-                    
+
                     <!-- 달력 그리드 -->
                     <div class="calendar-grid">
                         <div class="calendar-header">
@@ -297,7 +301,7 @@
                             <!-- 달력 날짜들이 동적으로 생성됩니다 -->
                         </div>
                     </div>
-                    
+
                     <!-- 선택된 날짜 상세 정보 -->
                     <div class="selected-date-info" id="selected-date-info" style="display: none;">
                         <h3>선택된 날짜 운세</h3>
@@ -329,7 +333,7 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- 달력 범례 -->
                     <div class="calendar-legend">
                         <h4>운세 표시</h4>
@@ -363,7 +367,7 @@
             <section class="saju-consultation" id="saju-consultation" style="display: none;">
                 <div class="consultation-container">
                     <h2 class="section-title">📋 개인 맞춤 사주 상담</h2>
-                    
+
                     <!-- 개인 사주 정보 요약 -->
                     <div class="personal-saju-summary">
                         <h3>나의 사주팔자</h3>
@@ -398,17 +402,18 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- 상세 해석 탭 -->
                     <div class="consultation-tabs">
-                        <button class="consultation-tab active" onclick="switchConsultationTab('personality')">성격 분석</button>
+                        <button class="consultation-tab active" onclick="switchConsultationTab('personality')">성격
+                            분석</button>
                         <button class="consultation-tab" onclick="switchConsultationTab('career')">직업운</button>
                         <button class="consultation-tab" onclick="switchConsultationTab('wealth')">재물운</button>
                         <button class="consultation-tab" onclick="switchConsultationTab('relationship')">인간관계</button>
                         <button class="consultation-tab" onclick="switchConsultationTab('health')">건강운</button>
                         <button class="consultation-tab" onclick="switchConsultationTab('luck-pattern')">운세 패턴</button>
                     </div>
-                    
+
                     <!-- 탭 컨텐츠 -->
                     <div class="consultation-content">
                         <div class="tab-content active" id="personality-content">
@@ -417,35 +422,35 @@
                                 사주 분석을 통한 개인 성격 해석이 표시됩니다.
                             </div>
                         </div>
-                        
+
                         <div class="tab-content" id="career-content">
                             <h4>직업운 및 사업운</h4>
                             <div class="analysis-content" id="career-analysis">
                                 직업 및 사업과 관련된 운세 분석이 표시됩니다.
                             </div>
                         </div>
-                        
+
                         <div class="tab-content" id="wealth-content">
                             <h4>재물운 및 투자운</h4>
                             <div class="analysis-content" id="wealth-analysis">
                                 재물 및 투자와 관련된 운세 분석이 표시됩니다.
                             </div>
                         </div>
-                        
+
                         <div class="tab-content" id="relationship-content">
                             <h4>인간관계 및 사회운</h4>
                             <div class="analysis-content" id="relationship-analysis">
                                 인간관계 및 사회적 운세 분석이 표시됩니다.
                             </div>
                         </div>
-                        
+
                         <div class="tab-content" id="health-content">
                             <h4>건강운 및 주의사항</h4>
                             <div class="analysis-content" id="health-analysis">
                                 건강과 관련된 주의사항 및 조언이 표시됩니다.
                             </div>
                         </div>
-                        
+
                         <div class="tab-content" id="luck-pattern-content">
                             <h4>개인 운세 패턴 분석</h4>
                             <div class="analysis-content" id="luck-pattern-analysis">
@@ -453,7 +458,7 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- 맞춤 번호 추천 -->
                     <div class="personalized-numbers">
                         <h3>개인 맞춤 번호 전략</h3>
@@ -465,7 +470,7 @@
                                 </div>
                                 <p class="strategy-description">용신과 희신을 기반으로 한 핵심 번호입니다.</p>
                             </div>
-                            
+
                             <div class="strategy-card">
                                 <h4>🔄 순환 전략 번호</h4>
                                 <div class="strategy-numbers" id="cycle-strategy-numbers">
@@ -473,7 +478,7 @@
                                 </div>
                                 <p class="strategy-description">대운 변화에 따른 주기적 추천 번호입니다.</p>
                             </div>
-                            
+
                             <div class="strategy-card">
                                 <h4>⚡ 특별 기회 번호</h4>
                                 <div class="strategy-numbers" id="special-opportunity-numbers">
@@ -490,16 +495,18 @@
             <section class="input-section">
                 <div class="form-container">
                     <h2 class="section-title">사주정보 입력</h2>
-                    
+
                     <form id="saju-form" class="saju-form">
                         <!-- 생년월일 입력 -->
                         <div class="form-group">
                             <label for="birth-date" class="form-label">생년월일</label>
                             <div class="date-input-container">
-                                <input type="date" id="birth-date" name="birth-date" required class="form-input date-input">
+                                <input type="date" id="birth-date" name="birth-date" required
+                                    class="form-input date-input">
                                 <div class="calendar-type">
                                     <label class="radio-label" for="calendar-solar">
-                                        <input type="radio" id="calendar-solar" name="calendar-type" value="solar" checked>
+                                        <input type="radio" id="calendar-solar" name="calendar-type" value="solar"
+                                            checked>
                                         <span class="radio-custom"></span>
                                         양력
                                     </label>
@@ -562,7 +569,7 @@
             <section class="winning-check-section">
                 <div class="winning-container">
                     <h2 class="section-title">🎯 실시간 당첨번호 확인</h2>
-                    
+
                     <!-- 최신 당첨번호 표시 -->
                     <div class="latest-winning">
                         <h3>최신 당첨번호</h3>
@@ -570,7 +577,7 @@
                             <div class="loading-text">당첨번호를 불러오는 중...</div>
                         </div>
                     </div>
-                    
+
                     <!-- 내 번호 당첨 확인 -->
                     <div class="my-winning-check">
                         <h3>내 번호 당첨 확인</h3>
@@ -581,7 +588,7 @@
                             당첨 확인하기
                         </button>
                     </div>
-                    
+
                     <!-- 사주 당첨 분석 -->
                     <div class="saju-analysis">
                         <h3>나의 사주 당첨 분석</h3>
@@ -589,7 +596,7 @@
                             <p class="analysis-placeholder">로그인 후 개인 맞춤 분석을 확인하세요.</p>
                         </div>
                     </div>
-                    
+
                     <!-- 추천 번호 -->
                     <div class="recommended-numbers">
                         <h3>다음 추천 번호</h3>
@@ -661,7 +668,7 @@
                     <button class="auth-tab active" onclick="switchAuthTab('login')">로그인</button>
                     <button class="auth-tab" onclick="switchAuthTab('signup')">회원가입</button>
                 </div>
-                
+
                 <form id="auth-form" class="auth-form">
                     <div class="form-group">
                         <label for="auth-email" class="form-label">이메일</label>
@@ -669,27 +676,29 @@
                     </div>
                     <div class="form-group">
                         <label for="auth-password" class="form-label">비밀번호</label>
-                        <input type="password" id="auth-password" required class="form-input" autocomplete="new-password">
+                        <input type="password" id="auth-password" required class="form-input"
+                            autocomplete="new-password">
                     </div>
                     <div id="confirm-password-group" class="form-group hidden">
                         <label for="auth-password-confirm" class="form-label">비밀번호 확인</label>
-                        <input type="password" id="auth-password-confirm" class="form-input" autocomplete="new-password">
+                        <input type="password" id="auth-password-confirm" class="form-input"
+                            autocomplete="new-password">
                     </div>
-                    
+
                     <button type="submit" id="auth-submit-btn" class="auth-submit-btn">
                         로그인
                     </button>
                 </form>
-                
+
                 <div class="auth-divider">
                     <span>또는</span>
                 </div>
-                
+
                 <button class="google-login-btn" onclick="handleGoogleLogin()">
                     <span class="google-icon">🔍</span>
                     Google로 로그인
                 </button>
-                
+
                 <div id="auth-error" class="auth-error hidden"></div>
             </div>
         </div>
@@ -705,12 +714,12 @@
 
     <!-- Firebase App (the core Firebase SDK) is always required and must be listed first -->
     <script src="https://www.gstatic.com/firebasejs/12.1.0/firebase-app-compat.js"></script>
-    
+
     <!-- Add Firebase products that you want to use -->
     <script src="https://www.gstatic.com/firebasejs/12.1.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.1.0/firebase-messaging-compat.js"></script>
-    
+
     <script src="firebase-config.js"></script>
     <script src="saju-engine.js"></script>
     <script src="offline-cache.js"></script>
@@ -722,7 +731,7 @@
     <script src="analytics.js"></script>
     <script src="script.js"></script>
     <script src="auth-handler.js"></script>
-    
+
     <script>
         // 서비스 워커 등록
         if ('serviceWorker' in navigator) {
@@ -730,7 +739,7 @@
                 try {
                     const registration = await navigator.serviceWorker.register('/saju-lotto-firebase/sw.js');
                     console.log('SW registered: ', registration);
-                    
+
                     // PWA 설치 프롬프트 처리
                     let deferredPrompt;
                     window.addEventListener('beforeinstallprompt', (e) => {
@@ -738,7 +747,7 @@
                         deferredPrompt = e;
                         showInstallPrompt();
                     });
-                    
+
                     function showInstallPrompt() {
                         const installBanner = document.createElement('div');
                         installBanner.className = 'install-banner';
@@ -750,7 +759,7 @@
                                 <button class="install-close" onclick="this.closest('.install-banner').remove()">✕</button>
                             </div>
                         `;
-                        
+
                         installBanner.style.cssText = `
                             position: fixed;
                             bottom: 20px;
@@ -764,10 +773,10 @@
                             z-index: 1000;
                             animation: slideUp 0.3s ease-out;
                         `;
-                        
+
                         document.body.appendChild(installBanner);
                     }
-                    
+
                     window.installPWA = async () => {
                         if (deferredPrompt) {
                             deferredPrompt.prompt();
@@ -777,13 +786,13 @@
                             document.querySelector('.install-banner')?.remove();
                         }
                     };
-                    
+
                 } catch (error) {
                     console.log('SW registration failed: ', error);
                 }
             });
         }
-        
+
         // PWA 설치 감지
         window.addEventListener('appinstalled', (evt) => {
             console.log('PWA가 설치되었습니다');
@@ -791,29 +800,29 @@
                 window.notificationManager.announce('앱이 성공적으로 설치되었습니다!');
             }
         });
-        
+
         // 네트워크 상태 감지
         window.addEventListener('online', () => {
             console.log('온라인 상태로 변경됨');
             document.body.classList.remove('offline');
         });
-        
+
         window.addEventListener('offline', () => {
             console.log('오프라인 상태로 변경됨');
             document.body.classList.add('offline');
         });
-        
+
         // 앱 단축키 URL 파라미터 처리
         document.addEventListener('DOMContentLoaded', () => {
             const urlParams = new URLSearchParams(window.location.search);
             const action = urlParams.get('action');
-            
+
             if (action) {
                 // URL에서 action 파라미터 제거
                 const newUrl = new URL(window.location);
                 newUrl.searchParams.delete('action');
                 window.history.replaceState({}, '', newUrl);
-                
+
                 // 액션 실행
                 setTimeout(() => {
                     if (window.appShortcuts) {
@@ -822,19 +831,19 @@
                 }, 1000);
             }
         });
-        
+
         // 언어 변경 이벤트 처리
         document.addEventListener('languageChanged', (event) => {
             console.log('언어가 변경되었습니다:', event.detail.locale);
             // 필요시 추가 처리
         });
-        
+
         // 테마 변경 이벤트 처리
         document.addEventListener('themeChanged', (event) => {
             console.log('테마가 변경되었습니다:', event.detail.theme);
             // 필요시 추가 처리
         });
-        
+
         // 전역 에러 처리
         window.addEventListener('error', (event) => {
             console.error('Global error:', event.error);
@@ -846,7 +855,7 @@
                 });
             }
         });
-        
+
         // Promise rejection 처리
         window.addEventListener('unhandledrejection', (event) => {
             console.error('Unhandled promise rejection:', event.reason);
@@ -857,7 +866,7 @@
                 });
             }
         });
-        
+
         // 페이지 가시성 변경 감지
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'visible') {
@@ -870,11 +879,11 @@
                 console.log('App moved to background');
             }
         });
-        
+
         console.log('🏮 사주명리 로또번호 생성기 PWA v2.0 로드 완료');
         console.log('✨ 새로운 기능: PWA, 스마트 알림, 다크모드, 오프라인 지원, 다국어, 접근성');
     </script>
-    
+
     <!-- PWA 설치 스타일 -->
     <style>
         @keyframes slideUp {
@@ -882,29 +891,30 @@
                 opacity: 0;
                 transform: translateY(20px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
             }
         }
-        
+
         .install-content {
             display: flex;
             align-items: center;
             gap: 12px;
             flex-wrap: wrap;
         }
-        
+
         .install-icon {
             font-size: 20px;
         }
-        
+
         .install-text {
             flex: 1;
             min-width: 200px;
             font-size: 14px;
         }
-        
+
         .install-btn {
             background: white;
             color: var(--primary-color);
@@ -916,12 +926,12 @@
             font-size: 14px;
             transition: all 0.3s ease;
         }
-        
+
         .install-btn:hover {
             transform: translateY(-1px);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
         }
-        
+
         .install-close {
             background: none;
             border: none;
@@ -936,11 +946,11 @@
             align-items: center;
             justify-content: center;
         }
-        
+
         .install-close:hover {
             background: rgba(255, 255, 255, 0.2);
         }
-        
+
         /* 오프라인 상태 표시 */
         body.offline::before {
             content: '⚠️ 오프라인 모드';
@@ -956,18 +966,18 @@
             z-index: 10000;
             font-size: 14px;
         }
-        
+
         body.offline {
             padding-top: 40px;
         }
-        
+
         @media (max-width: 480px) {
             .install-content {
                 flex-direction: column;
                 text-align: center;
                 gap: 10px;
             }
-            
+
             .install-text {
                 min-width: auto;
                 font-size: 13px;
@@ -975,4 +985,5 @@
         }
     </style>
 </body>
+
 </html>
