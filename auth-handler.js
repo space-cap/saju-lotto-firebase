@@ -138,6 +138,9 @@ async function handleGoogleLogin() {
     googleBtn.textContent = '처리 중...';
     
     try {
+        if (!window.firebaseAuth || !window.firebaseAuth.signInWithGoogle) {
+            throw new Error('Firebase 인증이 아직 초기화되지 않았습니다. 잠시 후 다시 시도해주세요.');
+        }
         const result = await window.firebaseAuth.signInWithGoogle();
         
         if (result.success) {

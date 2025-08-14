@@ -1220,3 +1220,5 @@ function sendTestNotification() {
 }
 
 console.log('Firebase 설정 완료');
+console.log('window.firebaseAuth 객체:', window.firebaseAuth);
+console.log('signInWithGoogle 함수:', window.firebaseAuth?.signInWithGoogle);
