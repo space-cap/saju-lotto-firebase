@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>관리자 패널 - 당첨 번호 관리</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Nanum+Myeongjo:wght@400;700;800&display=swap" rel="stylesheet">
+    <style>
+        .admin-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .admin-header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 20px;
+            background: linear-gradient(135deg, #8B4513, #CD853F);
+            color: white;
+            border-radius: 12px;
+        }
+        
+        .admin-section {
+            background: white;
+            padding: 30px;
+            margin-bottom: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(139, 69, 19, 0.1);
+            border: 2px solid #DEB887;
+        }
+        
+        .admin-form {
+            display: grid;
+            gap: 20px;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            align-items: center;
+        }
+        
+        .winning-numbers-input {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 10px;
+            margin: 20px 0;
+        }
+        
+        .number-input {
+            width: 100%;
+            height: 50px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            border: 2px solid #DEB887;
+            border-radius: 50%;
+            background: linear-gradient(145deg, #f9f9f9, #e9e9e9);
+        }
+        
+        .number-input:focus {
+            outline: none;
+            border-color: #8B4513;
+            box-shadow: 0 0 10px rgba(139, 69, 19, 0.3);
+        }
+        
+        .bonus-input {
+            grid-column: span 6;
+            margin-top: 10px;
+        }
+        
+        .bonus-input input {
+            width: 80px;
+            background: linear-gradient(145deg, #FFE4B5, #DEB887);
+        }
+        
+        .admin-btn {
+            background: linear-gradient(145deg, #8B4513, #CD853F);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .admin-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(139, 69, 19, 0.3);
+        }
+        
+        .winning-history {
+            margin-top: 20px;
+        }
+        
+        .winning-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            margin: 10px 0;
+            background: linear-gradient(145deg, #FFF8DC, #F5E6D3);
+            border-radius: 8px;
+            border-left: 4px solid #8B4513;
+        }
+        
+        .winning-numbers-display {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .winning-number {
+            width: 35px;
+            height: 35px;
+            background: linear-gradient(145deg, #8B4513, #CD853F);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .bonus-number {
+            background: linear-gradient(145deg, #DAA520, #FFD700);
+            color: #8B4513;
+        }
+        
+        .delete-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .status-message {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            font-weight: bold;
+            text-align: center;
+        }
+        
+        .status-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .statistics-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+        
+        .stat-card {
+            background: linear-gradient(145deg, #FFF8DC, #F5E6D3);
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            border: 2px solid #DEB887;
+        }
+        
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #8B4513;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            color: #8B4513;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <header class="admin-header">
+            <h1>🎯 로또 당첨번호 관리자 패널</h1>
+            <p>당첨 번호 입력 및 통계 관리</p>
+        </header>
+
+        <!-- 인증 상태 -->
+        <div class="admin-section">
+            <h3>관리자 인증</h3>
+            <div class="auth-status" id="authStatus">
+                <p>로그인이 필요합니다.</p>
+                <button class="admin-btn" onclick="showLoginModal()">로그인</button>
+            </div>
+        </div>
+
+        <!-- 당첨번호 입력 폼 -->
+        <div class="admin-section" id="adminPanel" style="display: none;">
+            <h3>새 당첨번호 입력</h3>
+            <form class="admin-form" id="winningForm">
+                <div class="form-row">
+                    <label for="drawNumber">회차:</label>
+                    <input type="number" id="drawNumber" required min="1" placeholder="예: 1085">
+                </div>
+                
+                <div class="form-row">
+                    <label for="drawDate">추첨일:</label>
+                    <input type="date" id="drawDate" required>
+                </div>
+                
+                <div>
+                    <label>당첨번호 (1~45):</label>
+                    <div class="winning-numbers-input">
+                        <input type="number" class="number-input" min="1" max="45" required placeholder="1번">
+                        <input type="number" class="number-input" min="1" max="45" required placeholder="2번">
+                        <input type="number" class="number-input" min="1" max="45" required placeholder="3번">
+                        <input type="number" class="number-input" min="1" max="45" required placeholder="4번">
+                        <input type="number" class="number-input" min="1" max="45" required placeholder="5번">
+                        <input type="number" class="number-input" min="1" max="45" required placeholder="6번">
+                        
+                        <div class="bonus-input">
+                            <label>보너스 번호:</label>
+                            <input type="number" class="number-input" min="1" max="45" required placeholder="보너스">
+                        </div>
+                    </div>
+                </div>
+                
+                <button type="submit" class="admin-btn">당첨번호 저장</button>
+            </form>
+            
+            <div id="statusMessage"></div>
+        </div>
+
+        <!-- 당첨번호 이력 -->
+        <div class="admin-section" id="historyPanel" style="display: none;">
+            <h3>당첨번호 이력</h3>
+            <div id="winningHistory" class="winning-history">
+                <!-- 동적으로 생성 -->
+            </div>
+        </div>
+
+        <!-- 통계 -->
+        <div class="admin-section" id="statsPanel" style="display: none;">
+            <h3>통계</h3>
+            <div class="statistics-section">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalDraws">0</div>
+                    <div class="stat-label">총 회차</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="totalUsers">0</div>
+                    <div class="stat-label">사용자 수</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="totalNumbers">0</div>
+                    <div class="stat-label">생성된 번호</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="totalWins">0</div>
+                    <div class="stat-label">당첨 건수</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 로그인 모달 -->
+    <div id="login-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="auth-modal-title">관리자 로그인</h3>
+                <button class="modal-close" onclick="closeLoginModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="auth-form">
+                    <div class="form-group">
+                        <label>이메일</label>
+                        <input type="email" id="auth-email" required>
+                    </div>
+                    <div class="form-group">
+                        <label>비밀번호</label>
+                        <input type="password" id="auth-password" required>
+                    </div>
+                    <div id="auth-error" class="auth-error hidden"></div>
+                    <button type="submit" id="auth-submit-btn" class="auth-btn">로그인</button>
+                </form>
+                <div class="auth-divider">
+                    <span>또는</span>
+                </div>
+                <button id="google-login-btn" class="google-btn">
+                    <span class="google-icon">🌐</span>
+                    Google로 로그인
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase 및 스크립트 -->
+    <script type="module" src="firebase-config.js"></script>
+    <script type="module" src="auth-handler.js"></script>
+    <script type="module">
+        // 관리자 패널 스크립트
+        let winningHistoryListener = null;
+
+        // 인증 상태 확인
+        function checkAdminAuth() {
+            const user = window.firebaseAuth?.getCurrentUser();
+            const authStatus = document.getElementById('authStatus');
+            const adminPanel = document.getElementById('adminPanel');
+            const historyPanel = document.getElementById('historyPanel');
+            const statsPanel = document.getElementById('statsPanel');
+            
+            if (user) {
+                authStatus.innerHTML = `
+                    <p>관리자: ${user.email}</p>
+                    <button class="admin-btn" onclick="handleLogout()">로그아웃</button>
+                `;
+                adminPanel.style.display = 'block';
+                historyPanel.style.display = 'block';
+                statsPanel.style.display = 'block';
+                
+                loadWinningHistory();
+                loadStatistics();
+                startRealTimeListener();
+            } else {
+                authStatus.innerHTML = `
+                    <p>로그인이 필요합니다.</p>
+                    <button class="admin-btn" onclick="showLoginModal()">로그인</button>
+                `;
+                adminPanel.style.display = 'none';
+                historyPanel.style.display = 'none';
+                statsPanel.style.display = 'none';
+                
+                if (winningHistoryListener) {
+                    winningHistoryListener();
+                    winningHistoryListener = null;
+                }
+            }
+        }
+
+        // 당첨번호 폼 제출
+        document.getElementById('winningForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const drawNumber = parseInt(document.getElementById('drawNumber').value);
+            const drawDate = document.getElementById('drawDate').value;
+            const numberInputs = document.querySelectorAll('.number-input');
+            const numbers = Array.from(numberInputs).slice(0, 6).map(input => parseInt(input.value));
+            const bonusNumber = parseInt(numberInputs[6].value);
+            
+            // 유효성 검사
+            if (numbers.some(num => num < 1 || num > 45)) {
+                showStatusMessage('1~45 사이의 번호를 입력해주세요.', 'error');
+                return;
+            }
+            
+            if (bonusNumber < 1 || bonusNumber > 45) {
+                showStatusMessage('보너스 번호는 1~45 사이여야 합니다.', 'error');
+                return;
+            }
+            
+            if (new Set(numbers).size !== 6) {
+                showStatusMessage('중복된 번호가 있습니다.', 'error');
+                return;
+            }
+            
+            if (numbers.includes(bonusNumber)) {
+                showStatusMessage('보너스 번호가 당첨번호와 중복됩니다.', 'error');
+                return;
+            }
+
+            try {
+                const winningData = {
+                    drawNumber,
+                    drawDate,
+                    numbers: numbers.sort((a, b) => a - b),
+                    bonusNumber,
+                    status: 'active'
+                };
+
+                await window.firebaseAuth.saveWinningNumbers(winningData);
+                showStatusMessage('당첨번호가 성공적으로 저장되었습니다!', 'success');
+                
+                // 폼 초기화
+                document.getElementById('winningForm').reset();
+                
+            } catch (error) {
+                console.error('당첨번호 저장 실패:', error);
+                showStatusMessage('저장 중 오류가 발생했습니다: ' + error.message, 'error');
+            }
+        });
+
+        // 상태 메시지 표시
+        function showStatusMessage(message, type) {
+            const statusDiv = document.getElementById('statusMessage');
+            statusDiv.className = `status-message status-${type}`;
+            statusDiv.textContent = message;
+            
+            setTimeout(() => {
+                statusDiv.textContent = '';
+                statusDiv.className = '';
+            }, 5000);
+        }
+
+        // 당첨번호 이력 로드
+        async function loadWinningHistory() {
+            try {
+                const winnings = await window.firebaseAuth.getLatestWinningNumbers(20);
+                const historyDiv = document.getElementById('winningHistory');
+                
+                if (winnings.length === 0) {
+                    historyDiv.innerHTML = '<p>등록된 당첨번호가 없습니다.</p>';
+                    return;
+                }
+                
+                historyDiv.innerHTML = winnings.map(winning => `
+                    <div class="winning-item">
+                        <div>
+                            <strong>${winning.drawNumber}회</strong>
+                            <span>(${new Date(winning.drawDate).toLocaleDateString('ko-KR')})</span>
+                        </div>
+                        <div class="winning-numbers-display">
+                            ${winning.numbers.map(num => 
+                                `<span class="winning-number">${num}</span>`
+                            ).join('')}
+                            <span class="winning-number bonus-number">+${winning.bonusNumber}</span>
+                        </div>
+                        <button class="delete-btn" onclick="deleteWinning('${winning.id}')">삭제</button>
+                    </div>
+                `).join('');
+                
+            } catch (error) {
+                console.error('당첨번호 이력 로드 실패:', error);
+            }
+        }
+
+        // 통계 로드
+        async function loadStatistics() {
+            try {
+                const winnings = await window.firebaseAuth.getLatestWinningNumbers(100);
+                document.getElementById('totalDraws').textContent = winnings.length;
+                
+                // 여기서 추가 통계를 계산할 수 있습니다
+                // 예: 사용자 수, 생성된 번호 수, 당첨 건수 등
+            } catch (error) {
+                console.error('통계 로드 실패:', error);
+            }
+        }
+
+        // 실시간 리스너 시작
+        function startRealTimeListener() {
+            if (winningHistoryListener) return;
+            
+            winningHistoryListener = window.firebaseAuth.listenToWinningNumbers((winnings) => {
+                loadWinningHistory();
+                loadStatistics();
+            });
+        }
+
+        // 당첨번호 삭제
+        async function deleteWinning(id) {
+            if (!confirm('이 당첨번호를 삭제하시겠습니까?')) return;
+            
+            try {
+                // Firebase에서 삭제 (실제 구현에서는 deleteDoc 사용)
+                showStatusMessage('삭제 기능은 추후 구현됩니다.', 'error');
+            } catch (error) {
+                showStatusMessage('삭제 중 오류가 발생했습니다.', 'error');
+            }
+        }
+
+        // 로그아웃 처리
+        async function handleLogout() {
+            try {
+                await window.firebaseAuth.signOutUser();
+                checkAdminAuth();
+            } catch (error) {
+                console.error('로그아웃 실패:', error);
+            }
+        }
+
+        // 전역 함수 노출
+        window.checkAdminAuth = checkAdminAuth;
+        window.deleteWinning = deleteWinning;
+        window.handleLogout = handleLogout;
+
+        // 초기 인증 상태 확인
+        setTimeout(checkAdminAuth, 1000);
+        
+        // 인증 상태 변경 감지
+        setInterval(checkAdminAuth, 2000);
+    </script>
+</body>
+</html>

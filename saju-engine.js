@@ -664,29 +664,576 @@ function calculateNumberBalance(numbers) {
     return balance;
 }
 
-// 대운/세운 영향을 고려한 가중치 계산
-function calculateLuckInfluence(sajuResult) {
+// 24절기 정의 (양력 기준 근사치)
+const SOLAR_TERMS = {
+    '입춘': { month: 2, day: 4 },
+    '우수': { month: 2, day: 19 },
+    '경칩': { month: 3, day: 6 },
+    '춘분': { month: 3, day: 21 },
+    '청명': { month: 4, day: 5 },
+    '곡우': { month: 4, day: 20 },
+    '입하': { month: 5, day: 6 },
+    '소만': { month: 5, day: 21 },
+    '망종': { month: 6, day: 6 },
+    '하지': { month: 6, day: 22 },
+    '소서': { month: 7, day: 7 },
+    '대서': { month: 7, day: 23 },
+    '입추': { month: 8, day: 8 },
+    '처서': { month: 8, day: 23 },
+    '백로': { month: 9, day: 8 },
+    '추분': { month: 9, day: 23 },
+    '한로': { month: 10, day: 8 },
+    '상강': { month: 10, day: 24 },
+    '입동': { month: 11, day: 7 },
+    '소설': { month: 11, day: 22 },
+    '대설': { month: 12, day: 7 },
+    '동지': { month: 12, day: 22 },
+    '소한': { month: 1, day: 6 },
+    '대한': { month: 1, day: 20 }
+};
+
+// 대운 계산 (성별에 따라 순행/역행)
+function calculateGreatLuck(sajuResult) {
+    const { yearPillar, birthInfo } = sajuResult;
+    const { gender } = birthInfo;
+    const isForward = (gender === 'male' && yearPillar.heavenlyStem.yin_yang === 'yang') ||
+                     (gender === 'female' && yearPillar.heavenlyStem.yin_yang === 'yin');
+    
     const currentYear = new Date().getFullYear();
-    const birthYear = sajuResult.birthInfo.originalDate.getFullYear();
+    const birthYear = birthInfo.originalDate.getFullYear();
     const age = currentYear - birthYear + 1;
     
-    // 현재 대운 (10년 주기)
-    const greatLuckCycle = Math.floor((age - 1) / 10);
+    const greatLuckStart = 8; // 대운 시작 나이
+    const currentGreatLuckCycle = Math.floor((age - greatLuckStart) / 10);
+    const yearsInCurrentCycle = (age - greatLuckStart) % 10;
     
-    // 올해 세운
-    const yearlyLuck = (currentYear - 1984) % 60; // 갑자 기준
+    const greatLuckPillars = [];
+    let baseStemIndex = sajuResult.monthPillar.heavenlyStem.number - 1;
+    let baseBranchIndex = sajuResult.monthPillar.earthlyBranch.number - 1;
+    
+    for (let i = 0; i < 8; i++) {
+        const stemIndex = isForward ? 
+            (baseStemIndex + i + 1) % 10 : 
+            (baseStemIndex - i - 1 + 10) % 10;
+        const branchIndex = isForward ? 
+            (baseBranchIndex + i + 1) % 12 : 
+            (baseBranchIndex - i - 1 + 12) % 12;
+            
+        greatLuckPillars.push({
+            cycle: i,
+            startAge: greatLuckStart + (i * 10),
+            endAge: greatLuckStart + ((i + 1) * 10) - 1,
+            heavenlyStem: HEAVENLY_STEMS[stemIndex],
+            earthlyBranch: EARTHLY_BRANCHES[branchIndex],
+            isCurrent: i === currentGreatLuckCycle
+        });
+    }
     
     return {
-        greatLuckCycle,
-        yearlyLuck,
-        ageInfluence: age % 12
+        isForward,
+        currentCycle: currentGreatLuckCycle,
+        yearsInCurrentCycle,
+        pillars: greatLuckPillars,
+        currentPillar: greatLuckPillars[currentGreatLuckCycle] || null
     };
+}
+
+// 세운 계산 (매년 변화)
+function calculateYearlyLuck() {
+    const currentYear = new Date().getFullYear();
+    const baseYear = 1984; // 갑자년
+    const yearDiff = currentYear - baseYear;
+    
+    const stemIndex = ((yearDiff % 10) + 10) % 10;
+    const branchIndex = ((yearDiff % 12) + 12) % 12;
+    
+    return {
+        year: currentYear,
+        heavenlyStem: HEAVENLY_STEMS[stemIndex],
+        earthlyBranch: EARTHLY_BRANCHES[branchIndex]
+    };
+}
+
+// 월운 계산 (현재 월 기준)
+function calculateMonthlyLuck() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth() + 1;
+    
+    // 년간에 따른 월간 계산
+    const yearStemIndex = ((year - 1984) % 10 + 10) % 10;
+    const yearStemGroup = Math.floor(yearStemIndex / 2);
+    
+    let monthBranch;
+    if (month >= 2) {
+        monthBranch = month - 2; // 2월=0(인), 3월=1(묘), ...
+    } else {
+        monthBranch = month + 10; // 1월=11(축)
+    }
+    
+    const monthStems = MONTH_STEMS[month] || MONTH_STEMS[2];
+    const stemIndex = monthStems[yearStemGroup];
+    
+    return {
+        month,
+        heavenlyStem: HEAVENLY_STEMS[stemIndex],
+        earthlyBranch: EARTHLY_BRANCHES[monthBranch]
+    };
+}
+
+// 일운 계산 (오늘 기준)
+function calculateDailyLuck() {
+    const today = new Date();
+    return calculateDayPillar(today);
+}
+
+// 현재 절기 찾기
+function getCurrentSolarTerm() {
+    const now = new Date();
+    const month = now.getMonth() + 1;
+    const day = now.getDate();
+    
+    let currentTerm = null;
+    let nextTerm = null;
+    let daysToNext = 999;
+    
+    const termEntries = Object.entries(SOLAR_TERMS);
+    
+    for (let i = 0; i < termEntries.length; i++) {
+        const [name, termDate] = termEntries[i];
+        const termMonth = termDate.month;
+        const termDay = termDate.day;
+        
+        // 현재 절기 찾기
+        if ((month === termMonth && day >= termDay) || 
+            (month > termMonth) || 
+            (month === 1 && termMonth === 12)) {
+            currentTerm = { name, ...termDate };
+        }
+        
+        // 다음 절기까지 일수 계산
+        let nextTermDate = new Date(now.getFullYear(), termMonth - 1, termDay);
+        if (nextTermDate <= now) {
+            nextTermDate = new Date(now.getFullYear() + 1, termMonth - 1, termDay);
+        }
+        
+        const daysDiff = Math.ceil((nextTermDate - now) / (24 * 60 * 60 * 1000));
+        if (daysDiff < daysToNext && daysDiff > 0) {
+            daysToNext = daysDiff;
+            nextTerm = { name, ...termDate };
+        }
+    }
+    
+    return { current: currentTerm, next: nextTerm, daysToNext };
+}
+
+// 종합 운세 계산 함수
+function calculateComprehensiveFortune(sajuResult) {
+    const greatLuck = calculateGreatLuck(sajuResult);
+    const yearlyLuck = calculateYearlyLuck();
+    const monthlyLuck = calculateMonthlyLuck();
+    const dailyLuck = calculateDailyLuck();
+    const solarTerm = getCurrentSolarTerm();
+    
+    return {
+        greatLuck,
+        yearlyLuck,
+        monthlyLuck,
+        dailyLuck,
+        solarTerm,
+        overallFortune: analyzeFortuneCombination(sajuResult, {
+            greatLuck, yearlyLuck, monthlyLuck, dailyLuck
+        })
+    };
+}
+
+// 운세 조합 분석
+function analyzeFortuneCombination(sajuResult, luckData) {
+    const dayElement = sajuResult.dayPillar.heavenlyStem.element;
+    const yongSinElement = sajuResult.yongSin.primary;
+    
+    let fortuneScore = 50; // 기본 점수
+    const influences = [];
+    
+    // 대운 영향 (30%)
+    if (luckData.greatLuck.currentPillar) {
+        const greatLuckStem = luckData.greatLuck.currentPillar.heavenlyStem.element;
+        const greatLuckBranch = luckData.greatLuck.currentPillar.earthlyBranch.element;
+        
+        if (greatLuckStem === yongSinElement || greatLuckBranch === yongSinElement) {
+            fortuneScore += 20;
+            influences.push('대운이 용신과 조화를 이루어 매우 길한 시기');
+        } else if (greatLuckStem === sajuResult.yongSin.avoid || greatLuckBranch === sajuResult.yongSin.avoid) {
+            fortuneScore -= 15;
+            influences.push('대운이 기신과 충돌하여 주의가 필요한 시기');
+        }
+    }
+    
+    // 세운 영향 (20%)
+    const yearLuckStem = luckData.yearlyLuck.heavenlyStem.element;
+    const yearLuckBranch = luckData.yearlyLuck.earthlyBranch.element;
+    
+    if (yearLuckStem === yongSinElement || yearLuckBranch === yongSinElement) {
+        fortuneScore += 15;
+        influences.push('올해 세운이 용신을 도와 좋은 기회가 많은 해');
+    }
+    
+    // 월운 영향 (15%)
+    const monthLuckStem = luckData.monthlyLuck.heavenlyStem.element;
+    const monthLuckBranch = luckData.monthlyLuck.earthlyBranch.element;
+    
+    if (monthLuckStem === yongSinElement || monthLuckBranch === yongSinElement) {
+        fortuneScore += 10;
+        influences.push('이번 달은 용신이 강해져 순조로운 달');
+    }
+    
+    // 일운 영향 (10%)
+    const dailyLuckStem = luckData.dailyLuck.heavenlyStem.element;
+    const dailyLuckBranch = luckData.dailyLuck.earthlyBranch.element;
+    
+    if (dailyLuckStem === dayElement) {
+        fortuneScore += 8;
+        influences.push('오늘은 일간이 강해져 의지력이 높은 날');
+    }
+    
+    // 오행 균형 보정
+    const balanceScore = sajuResult.elementAnalysis.balance * 20;
+    fortuneScore += balanceScore;
+    
+    return {
+        score: Math.max(0, Math.min(100, fortuneScore)),
+        level: getFortuneLevel(fortuneScore),
+        influences,
+        recommendation: getFortuneRecommendation(fortuneScore, yongSinElement)
+    };
+}
+
+// 운세 레벨 결정
+function getFortuneLevel(score) {
+    if (score >= 80) return { level: '대길', color: '#FF6B6B', description: '매우 좋은 운세' };
+    if (score >= 65) return { level: '길', color: '#4ECDC4', description: '좋은 운세' };
+    if (score >= 35) return { level: '평', color: '#45B7D1', description: '평범한 운세' };
+    if (score >= 20) return { level: '흉', color: '#96CEB4', description: '주의가 필요한 운세' };
+    return { level: '대흉', color: '#FECA57', description: '조심해야 할 운세' };
+}
+
+// 운세별 추천사항
+function getFortuneRecommendation(score, yongSinElement) {
+    const elementAdvice = {
+        wood: '창조적 활동과 성장 기회를 추구하세요',
+        fire: '열정적인 도전과 적극적인 행동이 도움이 됩니다',
+        earth: '안정성을 추구하고 신중한 판단이 중요합니다',
+        metal: '계획적이고 체계적인 접근이 성공의 열쇠입니다',
+        water: '유연한 사고와 지혜로운 판단이 필요합니다'
+    };
+    
+    if (score >= 70) {
+        return `좋은 운세입니다. ${elementAdvice[yongSinElement]}. 새로운 도전에 적극적으로 나서세요.`;
+    } else if (score >= 40) {
+        return `보통 운세입니다. ${elementAdvice[yongSinElement]}. 꾸준한 노력이 중요합니다.`;
+    } else {
+        return `조심스러운 시기입니다. ${elementAdvice[yongSinElement]}. 신중하게 행동하세요.`;
+    }
+}
+
+// 대운/세운 영향을 고려한 가중치 계산 (기존 함수 개선)
+function calculateLuckInfluence(sajuResult) {
+    return calculateComprehensiveFortune(sajuResult);
+}
+
+// 운세별 특별 번호 매핑
+const FORTUNE_NUMBER_MAPPING = {
+    '대길': [7, 14, 21, 28, 35, 42],
+    '길': [3, 12, 19, 26, 33, 40],
+    '평': [5, 10, 15, 25, 30, 45],
+    '흉': [2, 8, 18, 22, 38, 44],
+    '대흉': [1, 6, 11, 16, 31, 36]
+};
+
+// 방위별 번호 (팔괘 기준)
+const DIRECTION_NUMBERS = {
+    east: [3, 8, 13, 23, 28, 38],      // 동방(진괘)
+    southeast: [4, 9, 14, 24, 29, 39], // 남동(손괘)
+    south: [2, 7, 17, 27, 32, 37],     // 남방(리괘)
+    southwest: [5, 15, 20, 25, 35, 45],// 남서(곤괘)
+    west: [4, 9, 19, 24, 34, 44],      // 서방(태괘)
+    northwest: [1, 6, 16, 21, 31, 41], // 북서(건괘)
+    north: [1, 11, 16, 26, 36, 41],    // 북방(감괘)
+    northeast: [5, 10, 20, 30, 40, 45] // 북동(간괘)
+};
+
+// 운세 기반 로또 번호 생성
+function generateFortuneBasedNumbers(sajuResult) {
+    const fortune = calculateComprehensiveFortune(sajuResult);
+    const selectedNumbers = [];
+    const numberReasons = [];
+    const usedNumbers = new Set();
+    
+    // 1. 종합 운세 레벨에 따른 기본 번호 (2개)
+    const fortuneLevel = fortune.overallFortune.level.level;
+    const fortuneNumbers = FORTUNE_NUMBER_MAPPING[fortuneLevel] || FORTUNE_NUMBER_MAPPING['평'];
+    
+    for (let i = 0; i < 2 && selectedNumbers.length < 6; i++) {
+        const seed = (sajuResult.dayPillar.heavenlyStem.number * 7 + 
+                     sajuResult.timePillar.earthlyBranch.number * 5 + i * 3) % fortuneNumbers.length;
+        const number = fortuneNumbers[seed];
+        
+        if (!usedNumbers.has(number)) {
+            selectedNumbers.push(number);
+            usedNumbers.add(number);
+            numberReasons.push({
+                number,
+                element: getNumberElement(number),
+                reason: `${fortuneLevel} 운세 (${fortune.overallFortune.score}점)`
+            });
+        }
+    }
+    
+    // 2. 대운 영향 번호 (1개)
+    if (fortune.greatLuck.currentPillar && selectedNumbers.length < 6) {
+        const greatLuckElement = fortune.greatLuck.currentPillar.heavenlyStem.element;
+        const greatLuckNumbers = ELEMENT_LOTTO_MAPPING[greatLuckElement];
+        
+        if (greatLuckNumbers) {
+            const seed = fortune.greatLuck.yearsInCurrentCycle % greatLuckNumbers.length;
+            const number = greatLuckNumbers[seed];
+            
+            if (!usedNumbers.has(number)) {
+                selectedNumbers.push(number);
+                usedNumbers.add(number);
+                numberReasons.push({
+                    number,
+                    element: greatLuckElement,
+                    reason: `현재 대운 ${getElementName(greatLuckElement)} (${fortune.greatLuck.currentPillar.startAge}-${fortune.greatLuck.currentPillar.endAge}세)`
+                });
+            }
+        }
+    }
+    
+    // 3. 세운 영향 번호 (1개)
+    if (selectedNumbers.length < 6) {
+        const yearElement = fortune.yearlyLuck.heavenlyStem.element;
+        const yearNumbers = ELEMENT_LOTTO_MAPPING[yearElement];
+        
+        if (yearNumbers) {
+            const seed = new Date().getMonth() % yearNumbers.length;
+            const number = yearNumbers[seed];
+            
+            if (!usedNumbers.has(number)) {
+                selectedNumbers.push(number);
+                usedNumbers.add(number);
+                numberReasons.push({
+                    number,
+                    element: yearElement,
+                    reason: `올해 세운 ${getElementName(yearElement)}`
+                });
+            }
+        }
+    }
+    
+    // 4. 월운/일운 조합 번호 (1개)
+    if (selectedNumbers.length < 6) {
+        const monthElement = fortune.monthlyLuck.heavenlyStem.element;
+        const dailyElement = fortune.dailyLuck.heavenlyStem.element;
+        
+        // 월운과 일운이 상생하는지 확인
+        const isHarmony = ELEMENT_RELATIONS.generation[monthElement] === dailyElement ||
+                         ELEMENT_RELATIONS.generation[dailyElement] === monthElement;
+        
+        const targetElement = isHarmony ? monthElement : sajuResult.yongSin.primary;
+        const targetNumbers = ELEMENT_LOTTO_MAPPING[targetElement];
+        
+        if (targetNumbers) {
+            const seed = new Date().getDate() % targetNumbers.length;
+            const number = targetNumbers[seed];
+            
+            if (!usedNumbers.has(number)) {
+                selectedNumbers.push(number);
+                usedNumbers.add(number);
+                numberReasons.push({
+                    number,
+                    element: targetElement,
+                    reason: isHarmony ? `월운-일운 조화 ${getElementName(targetElement)}` : `용신 보강 ${getElementName(targetElement)}`
+                });
+            }
+        }
+    }
+    
+    // 5. 절기 특별 번호 (1개)
+    if (fortune.solarTerm.current && selectedNumbers.length < 6) {
+        const termElement = getSolarTermElement(fortune.solarTerm.current.name);
+        const termNumbers = ELEMENT_LOTTO_MAPPING[termElement];
+        
+        if (termNumbers) {
+            const seed = fortune.solarTerm.daysToNext % termNumbers.length;
+            const number = termNumbers[seed];
+            
+            if (!usedNumbers.has(number)) {
+                selectedNumbers.push(number);
+                usedNumbers.add(number);
+                numberReasons.push({
+                    number,
+                    element: termElement,
+                    reason: `현재 절기 ${fortune.solarTerm.current.name} ${getElementName(termElement)}`
+                });
+            }
+        }
+    }
+    
+    // 6. 길흉방위 번호 (나머지)
+    const favorableDirection = getFavorableDirectionToday(sajuResult, fortune);
+    const directionNumbers = DIRECTION_NUMBERS[favorableDirection];
+    
+    while (selectedNumbers.length < 6 && directionNumbers) {
+        const seed = (selectedNumbers.length * 17 + new Date().getHours()) % directionNumbers.length;
+        const number = directionNumbers[seed];
+        
+        if (!usedNumbers.has(number)) {
+            selectedNumbers.push(number);
+            usedNumbers.add(number);
+            numberReasons.push({
+                number,
+                element: getNumberElement(number),
+                reason: `오늘의 길방 ${getDirectionName(favorableDirection)}`
+            });
+        } else {
+            // 중복되면 다른 방위 시도
+            const allDirections = Object.keys(DIRECTION_NUMBERS);
+            const altDirection = allDirections[(allDirections.indexOf(favorableDirection) + 1) % allDirections.length];
+            const altNumbers = DIRECTION_NUMBERS[altDirection];
+            const altSeed = selectedNumbers.length % altNumbers.length;
+            const altNumber = altNumbers[altSeed];
+            
+            if (!usedNumbers.has(altNumber)) {
+                selectedNumbers.push(altNumber);
+                usedNumbers.add(altNumber);
+                numberReasons.push({
+                    number: altNumber,
+                    element: getNumberElement(altNumber),
+                    reason: `차선 길방 ${getDirectionName(altDirection)}`
+                });
+            } else {
+                break; // 더 이상 추가할 수 없으면 종료
+            }
+        }
+    }
+    
+    return {
+        numbers: selectedNumbers.sort((a, b) => a - b),
+        reasons: numberReasons.sort((a, b) => a.number - b.number),
+        fortune: fortune,
+        confidence: calculateConfidence(fortune, selectedNumbers)
+    };
+}
+
+// 절기별 오행 매핑
+function getSolarTermElement(termName) {
+    const seasonElements = {
+        '입춘': 'wood', '우수': 'water', '경칩': 'wood', '춘분': 'wood',
+        '청명': 'wood', '곡우': 'earth', '입하': 'fire', '소만': 'fire',
+        '망종': 'earth', '하지': 'fire', '소서': 'fire', '대서': 'fire',
+        '입추': 'metal', '처서': 'earth', '백로': 'metal', '추분': 'metal',
+        '한로': 'metal', '상강': 'earth', '입동': 'water', '소설': 'water',
+        '대설': 'water', '동지': 'water', '소한': 'water', '대한': 'earth'
+    };
+    return seasonElements[termName] || 'earth';
+}
+
+// 오늘의 길방 계산
+function getFavorableDirectionToday(sajuResult, fortune) {
+    const dayElement = sajuResult.dayPillar.heavenlyStem.element;
+    const yongSinElement = sajuResult.yongSin.primary;
+    
+    const elementDirections = {
+        wood: 'east',
+        fire: 'south', 
+        earth: 'southwest',
+        metal: 'west',
+        water: 'north'
+    };
+    
+    // 용신 방향을 우선으로, 없으면 일간 방향
+    return elementDirections[yongSinElement] || elementDirections[dayElement] || 'east';
+}
+
+// 방위 이름 한글화
+function getDirectionName(direction) {
+    const directionNames = {
+        east: '동방(震)',
+        southeast: '남동(巽)', 
+        south: '남방(離)',
+        southwest: '남서(坤)',
+        west: '서방(兌)',
+        northwest: '북서(乾)',
+        north: '북방(坎)',
+        northeast: '북동(艮)'
+    };
+    return directionNames[direction] || direction;
+}
+
+// 신뢰도 계산
+function calculateConfidence(fortune, selectedNumbers) {
+    let confidence = fortune.overallFortune.score;
+    
+    // 오행 균형 보정
+    const balance = calculateNumberBalance(selectedNumbers);
+    const balanceScore = Object.values(balance).reduce((acc, val) => acc + (val > 0 ? 1 : 0), 0);
+    confidence += balanceScore * 5;
+    
+    // 절기 보정 (절기 변화 시점이 가까우면 신뢰도 감소)
+    if (fortune.solarTerm.daysToNext <= 3) {
+        confidence -= 10;
+    }
+    
+    return Math.max(0, Math.min(100, confidence));
+}
+
+// 일일 특별 추천 번호 생성 (시간대별)
+function generateTimeBasedNumbers(sajuResult) {
+    const now = new Date();
+    const hour = now.getHours();
+    const timeElement = getTimeElement(hour);
+    
+    const timeNumbers = ELEMENT_LOTTO_MAPPING[timeElement];
+    if (!timeNumbers) return [];
+    
+    const count = Math.floor(hour / 4) + 1; // 시간대에 따라 1-6개
+    const selectedNumbers = [];
+    
+    for (let i = 0; i < count && i < timeNumbers.length; i++) {
+        const seed = (hour * 7 + i * 11) % timeNumbers.length;
+        selectedNumbers.push(timeNumbers[seed]);
+    }
+    
+    return [...new Set(selectedNumbers)].sort((a, b) => a - b);
+}
+
+// 시간대별 오행
+function getTimeElement(hour) {
+    if (hour >= 5 && hour < 7) return 'wood';   // 묘시
+    if (hour >= 7 && hour < 9) return 'earth';  // 진시
+    if (hour >= 9 && hour < 11) return 'fire';  // 사시
+    if (hour >= 11 && hour < 13) return 'fire'; // 오시
+    if (hour >= 13 && hour < 15) return 'earth';// 미시
+    if (hour >= 15 && hour < 17) return 'metal';// 신시
+    if (hour >= 17 && hour < 19) return 'metal';// 유시
+    if (hour >= 19 && hour < 21) return 'earth';// 술시
+    if (hour >= 21 && hour < 23) return 'water';// 해시
+    if (hour >= 23 || hour < 1) return 'water'; // 자시
+    if (hour >= 1 && hour < 3) return 'earth';  // 축시
+    if (hour >= 3 && hour < 5) return 'wood';   // 인시
+    return 'earth';
 }
 
 // 전역 스코프에 함수 노출
 if (typeof window !== 'undefined') {
     window.calculateSaju = calculateSaju;
     window.generateSajuBasedLottoNumbers = generateSajuBasedLottoNumbers;
+    window.generateFortuneBasedNumbers = generateFortuneBasedNumbers;
+    window.generateTimeBasedNumbers = generateTimeBasedNumbers;
+    window.calculateComprehensiveFortune = calculateComprehensiveFortune;
     window.ELEMENT_LOTTO_MAPPING = ELEMENT_LOTTO_MAPPING;
     window.ELEMENT_COLORS = ELEMENT_COLORS;
+    window.FORTUNE_NUMBER_MAPPING = FORTUNE_NUMBER_MAPPING;
+    window.DIRECTION_NUMBERS = DIRECTION_NUMBERS;
 }

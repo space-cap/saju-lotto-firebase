@@ -1,7 +1,7 @@
 // Firebase 설정 및 초기화
 import { initializeApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from 'firebase/auth';
-import { getFirestore, collection, addDoc, getDocs, query, orderBy, deleteDoc, doc, setDoc, getDoc, where } from 'firebase/firestore';
+import { getFirestore, collection, addDoc, getDocs, query, orderBy, deleteDoc, doc, setDoc, getDoc, where, onSnapshot, limit, serverTimestamp } from 'firebase/firestore';
 
 // Firebase 구성 정보 (실제 프로젝트에서는 환경변수 사용 권장)
 const firebaseConfig = {
@@ -28,6 +28,7 @@ googleProvider.setCustomParameters({
 
 // 현재 사용자 상태
 let currentUser = null;
+let currentUserSaju = null; // 사용자 사주 정보 캐시
 
 // 인증 상태 변화 감지
 onAuthStateChanged(auth, (user) => {
@@ -58,6 +59,9 @@ function updateUIForAuthState(user) {
     
     // 사주 이력 버튼 표시
     showSajuHistoryButton();
+    
+    // 사용자 프로필 자동 로드
+    loadUserProfile();
     
   } else {
     // 로그아웃 상태  
@@ -401,6 +405,459 @@ function getCurrentUser() {
   return currentUser;
 }
 
+// 사용자 프로필 자동 로드
+async function loadUserProfile() {
+  if (!currentUser) return;
+  
+  try {
+    const profile = await getSajuProfile();
+    if (profile) {
+      // 폼에 저장된 사주 정보 자동 입력
+      fillSajuForm(profile);
+    }
+  } catch (error) {
+    console.error('프로필 로드 실패:', error);
+  }
+}
+
+// 사주 폼에 데이터 채우기
+function fillSajuForm(profile) {
+  try {
+    const birthDateInput = document.getElementById('birth-date');
+    const birthTimeSelect = document.getElementById('birth-time');
+    const calendarRadios = document.querySelectorAll('input[name="calendar-type"]');
+    const genderRadios = document.querySelectorAll('input[name="gender"]');
+    
+    if (profile.birthDate && birthDateInput) {
+      const date = new Date(profile.birthDate);
+      birthDateInput.value = date.toISOString().split('T')[0];
+    }
+    
+    if (profile.birthTime && birthTimeSelect) {
+      birthTimeSelect.value = profile.birthTime;
+    }
+    
+    if (profile.calendarType && calendarRadios) {
+      calendarRadios.forEach(radio => {
+        if (radio.value === profile.calendarType) {
+          radio.checked = true;
+        }
+      });
+    }
+    
+    if (profile.gender && genderRadios) {
+      genderRadios.forEach(radio => {
+        if ((radio.value === 'male' && profile.gender === '남성') || 
+            (radio.value === 'female' && profile.gender === '여성')) {
+          radio.checked = true;
+        }
+      });
+    }
+    
+    console.log('사주 프로필이 자동으로 입력되었습니다.');
+  } catch (error) {
+    console.error('프로필 자동 입력 실패:', error);
+  }
+}
+
+// =================================
+// 당첨 번호 관련 기능
+// =================================
+
+// 당첨 번호 저장 (관리자용)
+async function saveWinningNumbers(winningData) {
+  try {
+    const winningCollection = collection(db, 'winningNumbers');
+    const docRef = await addDoc(winningCollection, {
+      ...winningData,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    });
+    
+    console.log('당첨 번호 저장 성공, ID:', docRef.id);
+    return { success: true, id: docRef.id };
+  } catch (error) {
+    console.error('당첨 번호 저장 실패:', error);
+    throw error;
+  }
+}
+
+// 최신 당첨 번호 가져오기
+async function getLatestWinningNumbers(limitCount = 10) {
+  try {
+    const winningCollection = collection(db, 'winningNumbers');
+    const q = query(winningCollection, orderBy('drawDate', 'desc'), limit(limitCount));
+    const querySnapshot = await getDocs(q);
+    
+    const winnings = [];
+    querySnapshot.forEach((doc) => {
+      winnings.push({
+        id: doc.id,
+        ...doc.data()
+      });
+    });
+    
+    return winnings;
+  } catch (error) {
+    console.error('당첨 번호 불러오기 실패:', error);
+    return [];
+  }
+}
+
+// 실시간 당첨 번호 리스너
+function listenToWinningNumbers(callback) {
+  const winningCollection = collection(db, 'winningNumbers');
+  const q = query(winningCollection, orderBy('drawDate', 'desc'), limit(5));
+  
+  return onSnapshot(q, (snapshot) => {
+    const winnings = [];
+    snapshot.forEach((doc) => {
+      winnings.push({
+        id: doc.id,
+        ...doc.data()
+      });
+    });
+    callback(winnings);
+  });
+}
+
+// 사용자 번호와 당첨 번호 비교
+function checkWinningMatch(userNumbers, winningNumbers) {
+  const matches = userNumbers.filter(num => winningNumbers.includes(num));
+  const matchCount = matches.length;
+  
+  let prize = '낙첨';
+  let prizeAmount = 0;
+  
+  switch (matchCount) {
+    case 6:
+      prize = '1등';
+      prizeAmount = 2000000000; // 20억 (평균)
+      break;
+    case 5:
+      prize = '2등';
+      prizeAmount = 30000000; // 3천만원 (평균)
+      break;
+    case 4:
+      prize = '3등';
+      prizeAmount = 1000000; // 100만원 (평균)
+      break;
+    case 3:
+      prize = '4등';
+      prizeAmount = 50000; // 5만원 (평균)
+      break;
+    case 2:
+      prize = '5등';
+      prizeAmount = 5000; // 5천원 (평균)
+      break;
+  }
+  
+  return {
+    matches,
+    matchCount,
+    prize,
+    prizeAmount,
+    isWin: matchCount >= 2
+  };
+}
+
+// 사용자 번호들의 당첨 이력 분석
+async function analyzeSajuWinningHistory(userId = null) {
+  const targetUserId = userId || currentUser?.uid;
+  if (!targetUserId) return null;
+  
+  try {
+    const userNumbers = await getSavedLottoNumbers();
+    const winningNumbers = await getLatestWinningNumbers(52); // 최근 1년
+    
+    const analysis = {
+      totalNumbers: userNumbers.length,
+      winningResults: [],
+      totalWins: 0,
+      totalPrize: 0,
+      bestMatch: 0,
+      sajuPatterns: {},
+      elementStats: { wood: 0, fire: 0, earth: 0, metal: 0, water: 0 }
+    };
+    
+    userNumbers.forEach(userNum => {
+      winningNumbers.forEach(winning => {
+        const result = checkWinningMatch(userNum.numbers, winning.numbers);
+        if (result.isWin) {
+          analysis.winningResults.push({
+            ...result,
+            userNumbers: userNum.numbers,
+            winningNumbers: winning.numbers,
+            drawDate: winning.drawDate,
+            drawNumber: winning.drawNumber,
+            userCreatedAt: userNum.createdAt
+          });
+          analysis.totalWins++;
+          analysis.totalPrize += result.prizeAmount;
+          analysis.bestMatch = Math.max(analysis.bestMatch, result.matchCount);
+        }
+      });
+    });
+    
+    return analysis;
+  } catch (error) {
+    console.error('당첨 이력 분석 실패:', error);
+    return null;
+  }
+}
+
+// 사주 기반 당첨 패턴 분석
+function analyzeSajuWinningPattern(sajuData, winningHistory) {
+  if (!sajuData || !winningHistory) return null;
+  
+  const patterns = {
+    elementDistribution: { wood: 0, fire: 0, earth: 0, metal: 0, water: 0 },
+    yinYangBalance: { yang: 0, yin: 0 },
+    timePatterns: {},
+    seasonalPatterns: { spring: 0, summer: 0, autumn: 0, winter: 0 },
+    luckyNumbers: [],
+    recommendedElements: []
+  };
+  
+  // 당첨된 번호들의 오행 분석
+  winningHistory.winningResults.forEach(result => {
+    result.matches.forEach(num => {
+      const element = getNumberElement(num);
+      if (element) {
+        patterns.elementDistribution[element]++;
+      }
+    });
+  });
+  
+  // 사주와 일치하는 패턴 찾기
+  const dominantElement = Object.keys(patterns.elementDistribution).reduce((a, b) => 
+    patterns.elementDistribution[a] > patterns.elementDistribution[b] ? a : b);
+  
+  patterns.recommendedElements = [dominantElement];
+  patterns.luckyNumbers = generateLuckyNumbersBySaju(sajuData, patterns);
+  
+  return patterns;
+}
+
+// 번호의 오행 속성 계산
+function getNumberElement(number) {
+  const elementMap = {
+    1: 'wood', 2: 'wood', 3: 'fire', 4: 'fire', 5: 'earth',
+    6: 'earth', 7: 'metal', 8: 'metal', 9: 'water', 10: 'water',
+    11: 'wood', 12: 'wood', 13: 'fire', 14: 'fire', 15: 'earth',
+    16: 'earth', 17: 'metal', 18: 'metal', 19: 'water', 20: 'water',
+    21: 'wood', 22: 'wood', 23: 'fire', 24: 'fire', 25: 'earth',
+    26: 'earth', 27: 'metal', 28: 'metal', 29: 'water', 30: 'water',
+    31: 'wood', 32: 'wood', 33: 'fire', 34: 'fire', 35: 'earth',
+    36: 'earth', 37: 'metal', 38: 'metal', 39: 'water', 40: 'water',
+    41: 'wood', 42: 'wood', 43: 'fire', 44: 'fire', 45: 'earth'
+  };
+  return elementMap[number] || 'earth';
+}
+
+// 사주 기반 행운의 번호 생성
+function generateLuckyNumbersBySaju(sajuData, patterns) {
+  const luckyNums = [];
+  const dominantElements = patterns.recommendedElements || [];
+  
+  for (let i = 1; i <= 45; i++) {
+    const element = getNumberElement(i);
+    if (dominantElements.includes(element)) {
+      luckyNums.push(i);
+    }
+  }
+  
+  // 사주의 일간과 연관된 번호 추가
+  if (sajuData && sajuData.dayElement) {
+    const dayNum = (sajuData.dayElement.number || 1) % 45;
+    if (dayNum > 0 && !luckyNums.includes(dayNum)) {
+      luckyNums.push(dayNum);
+    }
+  }
+  
+  return luckyNums.slice(0, 12); // 상위 12개 반환
+}
+
+// 개인 운세 패턴 저장
+async function saveUserFortunePattern(fortuneData, recommendation) {
+  if (!currentUser) {
+    throw new Error('로그인이 필요합니다.');
+  }
+  
+  try {
+    const fortunePattern = {
+      date: new Date().toISOString().split('T')[0],
+      fortuneScore: fortuneData.overallFortune.score,
+      fortuneLevel: fortuneData.overallFortune.level.level,
+      greatLuck: {
+        cycle: fortuneData.greatLuck.currentCycle,
+        pillar: fortuneData.greatLuck.currentPillar ? {
+          stem: fortuneData.greatLuck.currentPillar.heavenlyStem.name,
+          branch: fortuneData.greatLuck.currentPillar.earthlyBranch.name
+        } : null
+      },
+      yearlyLuck: {
+        stem: fortuneData.yearlyLuck.heavenlyStem.name,
+        branch: fortuneData.yearlyLuck.earthlyBranch.name
+      },
+      monthlyLuck: {
+        stem: fortuneData.monthlyLuck.heavenlyStem.name,
+        branch: fortuneData.monthlyLuck.earthlyBranch.name
+      },
+      solarTerm: fortuneData.solarTerm.current ? fortuneData.solarTerm.current.name : null,
+      recommendation: recommendation,
+      timestamp: serverTimestamp()
+    };
+    
+    const docRef = await addDoc(collection(db, 'users', currentUser.uid, 'fortunePatterns'), fortunePattern);
+    console.log('운세 패턴 저장 성공:', docRef.id);
+    return { success: true, id: docRef.id };
+  } catch (error) {
+    console.error('운세 패턴 저장 실패:', error);
+    throw error;
+  }
+}
+
+// 운세 기반 번호 사용 결과 저장
+async function saveFortuneNumberResult(numbers, fortuneData, actualResult = null) {
+  if (!currentUser) {
+    throw new Error('로그인이 필요합니다.');
+  }
+  
+  try {
+    const result = {
+      numbers: numbers.numbers,
+      confidence: numbers.confidence,
+      fortune: {
+        score: fortuneData.overallFortune.score,
+        level: fortuneData.overallFortune.level.level
+      },
+      generationDate: new Date().toISOString().split('T')[0],
+      actualResult: actualResult, // 실제 당첨 결과 (나중에 업데이트)
+      timestamp: serverTimestamp()
+    };
+    
+    const docRef = await addDoc(collection(db, 'users', currentUser.uid, 'fortuneNumberResults'), result);
+    console.log('운세 번호 결과 저장 성공:', docRef.id);
+    return { success: true, id: docRef.id };
+  } catch (error) {
+    console.error('운세 번호 결과 저장 실패:', error);
+    throw error;
+  }
+}
+
+// 개인 맞춤 분석 정보 저장
+async function savePersonalAnalysis(analysisData) {
+  if (!currentUser) {
+    throw new Error('로그인이 필요합니다.');
+  }
+  
+  try {
+    const analysis = {
+      personality: analysisData.personality,
+      career: analysisData.career,
+      wealth: analysisData.wealth,
+      relationship: analysisData.relationship,
+      health: analysisData.health,
+      luckPattern: analysisData.luckPattern,
+      coreStrategy: analysisData.coreStrategy,
+      cycleStrategy: analysisData.cycleStrategy,
+      specialOpportunity: analysisData.specialOpportunity,
+      lastUpdated: serverTimestamp(),
+      version: '1.0'
+    };
+    
+    await setDoc(doc(db, 'users', currentUser.uid, 'analysis', 'personal'), analysis);
+    console.log('개인 분석 저장 성공');
+    return { success: true };
+  } catch (error) {
+    console.error('개인 분석 저장 실패:', error);
+    throw error;
+  }
+}
+
+// 개인 맞춤 분석 정보 불러오기
+async function loadPersonalAnalysis() {
+  if (!currentUser) {
+    throw new Error('로그인이 필요합니다.');
+  }
+  
+  try {
+    const docRef = doc(db, 'users', currentUser.uid, 'analysis', 'personal');
+    const docSnap = await getDoc(docRef);
+    
+    if (docSnap.exists()) {
+      console.log('개인 분석 불러오기 성공');
+      return docSnap.data();
+    } else {
+      console.log('저장된 개인 분석이 없습니다.');
+      return null;
+    }
+  } catch (error) {
+    console.error('개인 분석 불러오기 실패:', error);
+    throw error;
+  }
+}
+
+// 운세 패턴 히스토리 조회
+async function getFortunePatternHistory(limit = 30) {
+  if (!currentUser) {
+    throw new Error('로그인이 필요합니다.');
+  }
+  
+  try {
+    const q = query(
+      collection(db, 'users', currentUser.uid, 'fortunePatterns'),
+      orderBy('timestamp', 'desc'),
+      limit(limit)
+    );
+    
+    const querySnapshot = await getDocs(q);
+    const patterns = [];
+    
+    querySnapshot.forEach((doc) => {
+      patterns.push({
+        id: doc.id,
+        ...doc.data()
+      });
+    });
+    
+    console.log(`운세 패턴 ${patterns.length}개 불러오기 성공`);
+    return patterns;
+  } catch (error) {
+    console.error('운세 패턴 히스토리 불러오기 실패:', error);
+    return [];
+  }
+}
+
+// 운세 번호 결과 조회
+async function getFortuneNumberResults(limit = 10) {
+  if (!currentUser) return [];
+  
+  try {
+    const q = query(
+      collection(db, 'users', currentUser.uid, 'fortuneNumberResults'),
+      orderBy('timestamp', 'desc'),
+      limit(limit)
+    );
+    
+    const querySnapshot = await getDocs(q);
+    const results = [];
+    
+    querySnapshot.forEach((doc) => {
+      results.push({
+        id: doc.id,
+        ...doc.data()
+      });
+    });
+    
+    return results;
+  } catch (error) {
+    console.error('운세 번호 결과 조회 실패:', error);
+    return [];
+  }
+}
+
 // 전역 함수로 노출
 window.firebaseAuth = {
   signUpWithEmail,
@@ -415,7 +872,25 @@ window.firebaseAuth = {
   deleteLottoNumbers,
   showSajuHistory,
   closeSajuHistoryModal,
-  deleteFirebaseLottoNumber
+  deleteFirebaseLottoNumber,
+  loadUserProfile,
+  fillSajuForm,
+  // 당첨 번호 관련 함수들
+  saveWinningNumbers,
+  getLatestWinningNumbers,
+  listenToWinningNumbers,
+  checkWinningMatch,
+  analyzeSajuWinningHistory,
+  analyzeSajuWinningPattern,
+  getNumberElement,
+  generateLuckyNumbersBySaju,
+  // 고급 운세 관련 함수들
+  saveUserFortunePattern,
+  saveFortuneNumberResult,
+  savePersonalAnalysis,
+  loadPersonalAnalysis,
+  getFortunePatternHistory,
+  getFortuneNumberResults
 };
 
 console.log('Firebase 설정 완료');

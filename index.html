@@ -36,6 +36,402 @@
 
         <!-- 메인 컨텐츠 -->
         <main class="main-content">
+            <!-- 오늘의 사주 운세 대시보드 -->
+            <section class="fortune-dashboard" id="fortune-dashboard" style="display: none;">
+                <div class="dashboard-container">
+                    <h2 class="section-title">
+                        🌟 오늘의 사주 운세
+                        <span class="today-date" id="today-date"></span>
+                    </h2>
+                    
+                    <!-- 종합 운세 요약 -->
+                    <div class="fortune-summary">
+                        <div class="fortune-score-card">
+                            <div class="score-display">
+                                <div class="score-number" id="fortune-score">0</div>
+                                <div class="score-label" id="fortune-level">분석 중</div>
+                            </div>
+                            <div class="score-description" id="fortune-description">운세를 분석하고 있습니다...</div>
+                        </div>
+                        
+                        <div class="current-terms">
+                            <div class="solar-term">
+                                <label>현재 절기:</label>
+                                <span id="current-solar-term">-</span>
+                            </div>
+                            <div class="next-term">
+                                <label>다음 절기까지:</label>
+                                <span id="days-to-next-term">-</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 사주 운세 상세 -->
+                    <div class="fortune-details">
+                        <!-- 대운 정보 -->
+                        <div class="fortune-card great-luck">
+                            <h3>현재 대운 (大運)</h3>
+                            <div class="luck-info">
+                                <div class="luck-pillar" id="great-luck-pillar">-</div>
+                                <div class="luck-period" id="great-luck-period">-</div>
+                                <div class="luck-influence" id="great-luck-influence">분석 중...</div>
+                            </div>
+                        </div>
+                        
+                        <!-- 세운 정보 -->
+                        <div class="fortune-card yearly-luck">
+                            <h3>올해 세운 (歲運)</h3>
+                            <div class="luck-info">
+                                <div class="luck-pillar" id="yearly-luck-pillar">-</div>
+                                <div class="luck-year" id="yearly-luck-year">-</div>
+                                <div class="luck-influence" id="yearly-luck-influence">분석 중...</div>
+                            </div>
+                        </div>
+                        
+                        <!-- 월운 정보 -->
+                        <div class="fortune-card monthly-luck">
+                            <h3>이번 달 월운 (月運)</h3>
+                            <div class="luck-info">
+                                <div class="luck-pillar" id="monthly-luck-pillar">-</div>
+                                <div class="luck-month" id="monthly-luck-month">-</div>
+                                <div class="luck-influence" id="monthly-luck-influence">분석 중...</div>
+                            </div>
+                        </div>
+                        
+                        <!-- 일운 정보 -->
+                        <div class="fortune-card daily-luck">
+                            <h3>오늘 일운 (日運)</h3>
+                            <div class="luck-info">
+                                <div class="luck-pillar" id="daily-luck-pillar">-</div>
+                                <div class="luck-today" id="daily-luck-today">-</div>
+                                <div class="luck-influence" id="daily-luck-influence">분석 중...</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 오행 에너지 시각화 -->
+                    <div class="element-energy">
+                        <h3>오늘의 오행 에너지</h3>
+                        <div class="element-chart">
+                            <div class="element-bar" data-element="wood">
+                                <div class="element-name">목(木)</div>
+                                <div class="energy-bar">
+                                    <div class="energy-fill wood-energy" id="wood-energy" style="width: 0%"></div>
+                                </div>
+                                <div class="energy-value" id="wood-value">0%</div>
+                            </div>
+                            <div class="element-bar" data-element="fire">
+                                <div class="element-name">화(火)</div>
+                                <div class="energy-bar">
+                                    <div class="energy-fill fire-energy" id="fire-energy" style="width: 0%"></div>
+                                </div>
+                                <div class="energy-value" id="fire-value">0%</div>
+                            </div>
+                            <div class="element-bar" data-element="earth">
+                                <div class="element-name">토(土)</div>
+                                <div class="energy-bar">
+                                    <div class="energy-fill earth-energy" id="earth-energy" style="width: 0%"></div>
+                                </div>
+                                <div class="energy-value" id="earth-value">0%</div>
+                            </div>
+                            <div class="element-bar" data-element="metal">
+                                <div class="element-name">금(金)</div>
+                                <div class="energy-bar">
+                                    <div class="energy-fill metal-energy" id="metal-energy" style="width: 0%"></div>
+                                </div>
+                                <div class="energy-value" id="metal-value">0%</div>
+                            </div>
+                            <div class="element-bar" data-element="water">
+                                <div class="element-name">수(水)</div>
+                                <div class="energy-bar">
+                                    <div class="energy-fill water-energy" id="water-energy" style="width: 0%"></div>
+                                </div>
+                                <div class="energy-value" id="water-value">0%</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 운세 기반 추천 번호 -->
+                    <div class="fortune-numbers">
+                        <h3>오늘의 운세 추천 번호</h3>
+                        <div class="fortune-number-container">
+                            <div class="number-set fortune-based">
+                                <h4>🍀 운세 기반 번호</h4>
+                                <div class="number-balls" id="fortune-based-numbers">
+                                    <div class="number-placeholder">운세 분석 후 표시됩니다</div>
+                                </div>
+                                <div class="number-confidence">
+                                    신뢰도: <span id="fortune-confidence">0%</span>
+                                </div>
+                            </div>
+                            
+                            <div class="number-set time-based">
+                                <h4>⏰ 시간 기반 번호</h4>
+                                <div class="number-balls" id="time-based-numbers">
+                                    <div class="number-placeholder">시간 분석 후 표시됩니다</div>
+                                </div>
+                                <div class="current-time">
+                                    현재 시각: <span id="current-time-element">-</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 운세 추천사항 -->
+                    <div class="fortune-recommendations">
+                        <h3>오늘의 운세 조언</h3>
+                        <div class="recommendation-content" id="fortune-recommendation">
+                            사주 분석을 통해 개인 맞춤 조언을 제공해드립니다.
+                        </div>
+                        <div class="favorable-elements">
+                            <div class="favorable-item">
+                                <label>길한 방향:</label>
+                                <span id="favorable-direction">-</span>
+                            </div>
+                            <div class="favorable-item">
+                                <label>행운의 색상:</label>
+                                <span id="lucky-colors">-</span>
+                            </div>
+                            <div class="favorable-item">
+                                <label>주의사항:</label>
+                                <span id="caution-advice">-</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 대시보드 액션 버튼 -->
+                    <div class="dashboard-actions">
+                        <button class="fortune-action-btn refresh-btn" onclick="refreshFortuneDashboard()">
+                            🔄 운세 새로고침
+                        </button>
+                        <button class="fortune-action-btn generate-btn" onclick="generateFortuneNumbers()">
+                            🎯 운세 번호 생성
+                        </button>
+                        <button class="fortune-action-btn detailed-btn" onclick="showDetailedFortune()">
+                            📋 상세 운세 보기
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 운세 달력 섹션 -->
+            <section class="fortune-calendar" id="fortune-calendar" style="display: none;">
+                <div class="calendar-container">
+                    <h2 class="section-title">🗓️ 내 운세 달력</h2>
+                    
+                    <!-- 달력 네비게이션 -->
+                    <div class="calendar-nav">
+                        <button class="nav-btn prev-month" onclick="changeMonth(-1)">‹</button>
+                        <div class="current-month">
+                            <span id="calendar-year-month">2024년 8월</span>
+                        </div>
+                        <button class="nav-btn next-month" onclick="changeMonth(1)">›</button>
+                    </div>
+                    
+                    <!-- 달력 그리드 -->
+                    <div class="calendar-grid">
+                        <div class="calendar-header">
+                            <div class="day-header">일</div>
+                            <div class="day-header">월</div>
+                            <div class="day-header">화</div>
+                            <div class="day-header">수</div>
+                            <div class="day-header">목</div>
+                            <div class="day-header">금</div>
+                            <div class="day-header">토</div>
+                        </div>
+                        <div class="calendar-body" id="calendar-body">
+                            <!-- 달력 날짜들이 동적으로 생성됩니다 -->
+                        </div>
+                    </div>
+                    
+                    <!-- 선택된 날짜 상세 정보 -->
+                    <div class="selected-date-info" id="selected-date-info" style="display: none;">
+                        <h3>선택된 날짜 운세</h3>
+                        <div class="date-fortune-content">
+                            <div class="selected-date" id="selected-date-display">2024년 8월 14일</div>
+                            <div class="date-fortune-level">
+                                <span class="fortune-badge" id="date-fortune-badge">길</span>
+                                <span class="fortune-description" id="date-fortune-desc">좋은 기회가 찾아올 날</span>
+                            </div>
+                            <div class="date-recommendations">
+                                <div class="recommendation-item">
+                                    <label>추천 행동:</label>
+                                    <span id="date-action-advice">새로운 일에 도전하기</span>
+                                </div>
+                                <div class="recommendation-item">
+                                    <label>길한 시간:</label>
+                                    <span id="date-lucky-time">오전 9-11시 (사시)</span>
+                                </div>
+                                <div class="recommendation-item">
+                                    <label>주의사항:</label>
+                                    <span id="date-caution">성급한 결정 피하기</span>
+                                </div>
+                            </div>
+                            <div class="date-numbers">
+                                <h4>이 날의 추천 번호</h4>
+                                <div class="date-number-balls" id="date-recommended-numbers">
+                                    <!-- 번호가 동적으로 생성됩니다 -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 달력 범례 -->
+                    <div class="calendar-legend">
+                        <h4>운세 표시</h4>
+                        <div class="legend-items">
+                            <div class="legend-item">
+                                <span class="legend-color excellent"></span>
+                                <span class="legend-text">대길 (85-100점)</span>
+                            </div>
+                            <div class="legend-item">
+                                <span class="legend-color good"></span>
+                                <span class="legend-text">길 (70-84점)</span>
+                            </div>
+                            <div class="legend-item">
+                                <span class="legend-color normal"></span>
+                                <span class="legend-text">평 (40-69점)</span>
+                            </div>
+                            <div class="legend-item">
+                                <span class="legend-color caution"></span>
+                                <span class="legend-text">흉 (25-39점)</span>
+                            </div>
+                            <div class="legend-item">
+                                <span class="legend-color bad"></span>
+                                <span class="legend-text">대흉 (0-24점)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 개인화된 사주 상담 페이지 -->
+            <section class="saju-consultation" id="saju-consultation" style="display: none;">
+                <div class="consultation-container">
+                    <h2 class="section-title">📋 개인 맞춤 사주 상담</h2>
+                    
+                    <!-- 개인 사주 정보 요약 -->
+                    <div class="personal-saju-summary">
+                        <h3>나의 사주팔자</h3>
+                        <div class="saju-pillars-display">
+                            <div class="pillar-column">
+                                <div class="pillar-label">년주</div>
+                                <div class="pillar-content" id="year-pillar-detail">
+                                    <div class="pillar-stem">-</div>
+                                    <div class="pillar-branch">-</div>
+                                </div>
+                            </div>
+                            <div class="pillar-column">
+                                <div class="pillar-label">월주</div>
+                                <div class="pillar-content" id="month-pillar-detail">
+                                    <div class="pillar-stem">-</div>
+                                    <div class="pillar-branch">-</div>
+                                </div>
+                            </div>
+                            <div class="pillar-column">
+                                <div class="pillar-label">일주</div>
+                                <div class="pillar-content" id="day-pillar-detail">
+                                    <div class="pillar-stem">-</div>
+                                    <div class="pillar-branch">-</div>
+                                </div>
+                            </div>
+                            <div class="pillar-column">
+                                <div class="pillar-label">시주</div>
+                                <div class="pillar-content" id="time-pillar-detail">
+                                    <div class="pillar-stem">-</div>
+                                    <div class="pillar-branch">-</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 상세 해석 탭 -->
+                    <div class="consultation-tabs">
+                        <button class="consultation-tab active" onclick="switchConsultationTab('personality')">성격 분석</button>
+                        <button class="consultation-tab" onclick="switchConsultationTab('career')">직업운</button>
+                        <button class="consultation-tab" onclick="switchConsultationTab('wealth')">재물운</button>
+                        <button class="consultation-tab" onclick="switchConsultationTab('relationship')">인간관계</button>
+                        <button class="consultation-tab" onclick="switchConsultationTab('health')">건강운</button>
+                        <button class="consultation-tab" onclick="switchConsultationTab('luck-pattern')">운세 패턴</button>
+                    </div>
+                    
+                    <!-- 탭 컨텐츠 -->
+                    <div class="consultation-content">
+                        <div class="tab-content active" id="personality-content">
+                            <h4>성격 및 기질 분석</h4>
+                            <div class="analysis-content" id="personality-analysis">
+                                사주 분석을 통한 개인 성격 해석이 표시됩니다.
+                            </div>
+                        </div>
+                        
+                        <div class="tab-content" id="career-content">
+                            <h4>직업운 및 사업운</h4>
+                            <div class="analysis-content" id="career-analysis">
+                                직업 및 사업과 관련된 운세 분석이 표시됩니다.
+                            </div>
+                        </div>
+                        
+                        <div class="tab-content" id="wealth-content">
+                            <h4>재물운 및 투자운</h4>
+                            <div class="analysis-content" id="wealth-analysis">
+                                재물 및 투자와 관련된 운세 분석이 표시됩니다.
+                            </div>
+                        </div>
+                        
+                        <div class="tab-content" id="relationship-content">
+                            <h4>인간관계 및 사회운</h4>
+                            <div class="analysis-content" id="relationship-analysis">
+                                인간관계 및 사회적 운세 분석이 표시됩니다.
+                            </div>
+                        </div>
+                        
+                        <div class="tab-content" id="health-content">
+                            <h4>건강운 및 주의사항</h4>
+                            <div class="analysis-content" id="health-analysis">
+                                건강과 관련된 주의사항 및 조언이 표시됩니다.
+                            </div>
+                        </div>
+                        
+                        <div class="tab-content" id="luck-pattern-content">
+                            <h4>개인 운세 패턴 분석</h4>
+                            <div class="analysis-content" id="luck-pattern-analysis">
+                                개인별 운세 패턴 및 특별한 주기가 표시됩니다.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 맞춤 번호 추천 -->
+                    <div class="personalized-numbers">
+                        <h3>개인 맞춤 번호 전략</h3>
+                        <div class="number-strategies">
+                            <div class="strategy-card">
+                                <h4>🎯 핵심 전략 번호</h4>
+                                <div class="strategy-numbers" id="core-strategy-numbers">
+                                    <!-- 핵심 전략 번호들 -->
+                                </div>
+                                <p class="strategy-description">용신과 희신을 기반으로 한 핵심 번호입니다.</p>
+                            </div>
+                            
+                            <div class="strategy-card">
+                                <h4>🔄 순환 전략 번호</h4>
+                                <div class="strategy-numbers" id="cycle-strategy-numbers">
+                                    <!-- 순환 전략 번호들 -->
+                                </div>
+                                <p class="strategy-description">대운 변화에 따른 주기적 추천 번호입니다.</p>
+                            </div>
+                            
+                            <div class="strategy-card">
+                                <h4>⚡ 특별 기회 번호</h4>
+                                <div class="strategy-numbers" id="special-opportunity-numbers">
+                                    <!-- 특별 기회 번호들 -->
+                                </div>
+                                <p class="strategy-description">중요한 절기와 특별한 날의 기회 번호입니다.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             <!-- 사주 입력 영역 -->
             <section class="input-section">
                 <div class="form-container">
@@ -105,6 +501,53 @@
                             <div class="btn-decoration"></div>
                         </button>
                     </form>
+                </div>
+            </section>
+
+            <!-- 실시간 당첨번호 확인 섹션 -->
+            <section class="winning-check-section">
+                <div class="winning-container">
+                    <h2 class="section-title">🎯 실시간 당첨번호 확인</h2>
+                    
+                    <!-- 최신 당첨번호 표시 -->
+                    <div class="latest-winning">
+                        <h3>최신 당첨번호</h3>
+                        <div id="latest-winning-display" class="latest-winning-display">
+                            <div class="loading-text">당첨번호를 불러오는 중...</div>
+                        </div>
+                    </div>
+                    
+                    <!-- 내 번호 당첨 확인 -->
+                    <div class="my-winning-check">
+                        <h3>내 번호 당첨 확인</h3>
+                        <div id="my-winning-results" class="my-winning-results">
+                            <p class="login-required">로그인 후 당첨 확인이 가능합니다.</p>
+                        </div>
+                        <button class="winning-check-btn" onclick="checkMyWinnings()" style="display: none;">
+                            당첨 확인하기
+                        </button>
+                    </div>
+                    
+                    <!-- 사주 당첨 분석 -->
+                    <div class="saju-analysis">
+                        <h3>나의 사주 당첨 분석</h3>
+                        <div id="saju-winning-analysis" class="saju-analysis-content">
+                            <p class="analysis-placeholder">로그인 후 개인 맞춤 분석을 확인하세요.</p>
+                        </div>
+                    </div>
+                    
+                    <!-- 추천 번호 -->
+                    <div class="recommended-numbers">
+                        <h3>다음 추천 번호</h3>
+                        <div id="recommended-display" class="recommended-display">
+                            <div class="recommendation-placeholder">
+                                <p>사주 분석을 통한 맞춤 추천번호</p>
+                                <button class="get-recommendation-btn" onclick="generateRecommendedNumbers()">
+                                    추천번호 받기
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </section>
 
