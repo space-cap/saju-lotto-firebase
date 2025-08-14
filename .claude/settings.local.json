@@ -19,7 +19,9 @@
       "Bash(copy icon-72x72.png icon-192x192.png)",
       "Bash(copy icon-72x72.png icon-384x384.png)",
       "Bash(copy icon-72x72.png icon-512x512.png)",
-      "Bash(cp:*)"
+      "Bash(cp:*)",
+      "WebFetch(domain:space-cap.github.io)",
+      "WebFetch(domain:space-cap.github.io)"
     ],
     "deny": [],
     "ask": [],
