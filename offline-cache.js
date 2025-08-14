@@ -323,7 +323,17 @@ class OfflineCache {
 
   // 데이터 저장
   async storeData(storeName, data) {
+    // 데이터베이스 초기화 대기
+    if (!this.db) {
+      await this.initDB();
+    }
+    
     return new Promise((resolve, reject) => {
+      if (!this.db) {
+        reject(new Error('Database not initialized'));
+        return;
+      }
+      
       const transaction = this.db.transaction([storeName], 'readwrite');
       const store = transaction.objectStore(storeName);
       const request = store.put(data);
@@ -335,6 +345,11 @@ class OfflineCache {
 
   // 데이터 조회
   async getData(storeName, key) {
+    // 데이터베이스 초기화 대기
+    if (!this.db) {
+      await this.initDB();
+    }
+    
     return new Promise((resolve, reject) => {
       if (!this.db) {
         reject(new Error('Database not initialized'));
