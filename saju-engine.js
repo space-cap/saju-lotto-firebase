@@ -453,7 +453,240 @@ function getElementName(element) {
     return names[element] || element;
 }
 
+// 오행별 로또 번호 매핑
+const ELEMENT_LOTTO_MAPPING = {
+    wood: [3, 8, 13, 18, 23, 28, 33, 38, 43],
+    fire: [2, 7, 12, 17, 22, 27, 32, 37, 42],
+    earth: [5, 10, 15, 20, 25, 30, 35, 40, 45],
+    metal: [4, 9, 14, 19, 24, 29, 34, 39, 44],
+    water: [1, 6, 11, 16, 21, 26, 31, 36, 41]
+};
+
+// 오행별 색상 정의
+const ELEMENT_COLORS = {
+    wood: '#228B22',    // 초록색
+    fire: '#DC143C',     // 빨간색  
+    earth: '#CD853F',    // 갈색
+    metal: '#C0C0C0',    // 은색
+    water: '#191970'     // 남색
+};
+
+// 사주 기반 로또 번호 생성 함수
+function generateSajuBasedLottoNumbers(sajuResult) {
+    const favorableElements = getFavorableElements(sajuResult);
+    const elementBalance = analyzeElementBalance(sajuResult);
+    const birthNumbers = extractBirthNumbers(sajuResult.birthInfo.originalDate);
+    
+    const selectedNumbers = [];
+    const numberReasons = [];
+    const usedNumbers = new Set();
+    
+    // 1단계: 용신(favorableElements) 중심 번호 선택 (2-3개)
+    const primaryElement = sajuResult.yongSin.primary;
+    if (primaryElement && ELEMENT_LOTTO_MAPPING[primaryElement]) {
+        const primaryNumbers = ELEMENT_LOTTO_MAPPING[primaryElement];
+        const primaryCount = Math.min(3, primaryNumbers.length);
+        
+        for (let i = 0; i < primaryCount && selectedNumbers.length < 6; i++) {
+            const seed = (sajuResult.dayPillar.heavenlyStem.number * 17 + 
+                         sajuResult.timePillar.earthlyBranch.number * 13 + i * 7) % primaryNumbers.length;
+            const number = primaryNumbers[seed];
+            
+            if (!usedNumbers.has(number)) {
+                selectedNumbers.push(number);
+                usedNumbers.add(number);
+                numberReasons.push({
+                    number: number,
+                    element: primaryElement,
+                    reason: `용신 ${getElementName(primaryElement)}의 기운`
+                });
+            }
+        }
+    }
+    
+    // 2단계: 사주 4주의 균형도 고려한 번호 선택
+    const pillars = [sajuResult.yearPillar, sajuResult.monthPillar, 
+                    sajuResult.dayPillar, sajuResult.timePillar];
+    
+    pillars.forEach((pillar, index) => {
+        if (selectedNumbers.length >= 6) return;
+        
+        const pillarElements = [pillar.heavenlyStem.element, pillar.earthlyBranch.element];
+        
+        pillarElements.forEach(element => {
+            if (selectedNumbers.length >= 6) return;
+            
+            const elementNumbers = ELEMENT_LOTTO_MAPPING[element];
+            if (elementNumbers) {
+                const seed = (pillar.heavenlyStem.number + pillar.earthlyBranch.number + index) % elementNumbers.length;
+                const number = elementNumbers[seed];
+                
+                if (!usedNumbers.has(number)) {
+                    selectedNumbers.push(number);
+                    usedNumbers.add(number);
+                    const pillarNames = ['년주', '월주', '일주', '시주'];
+                    numberReasons.push({
+                        number: number,
+                        element: element,
+                        reason: `${pillarNames[index]} ${getElementName(element)}의 조화`
+                    });
+                }
+            }
+        });
+    });
+    
+    // 3단계: 생년월일의 숫자 조합 활용
+    birthNumbers.forEach(birthNum => {
+        if (selectedNumbers.length >= 6) return;
+        
+        if (!usedNumbers.has(birthNum) && birthNum >= 1 && birthNum <= 45) {
+            selectedNumbers.push(birthNum);
+            usedNumbers.add(birthNum);
+            numberReasons.push({
+                number: birthNum,
+                element: getNumberElement(birthNum),
+                reason: '생년월일의 특별한 의미'
+            });
+        }
+    });
+    
+    // 4단계: 부족한 번호를 오행 균형으로 채우기
+    while (selectedNumbers.length < 6) {
+        const weakestElement = findWeakestElement(elementBalance);
+        const weakestNumbers = ELEMENT_LOTTO_MAPPING[weakestElement];
+        
+        if (weakestNumbers) {
+            const randomSeed = (selectedNumbers.length * 23 + 
+                              sajuResult.dayPillar.heavenlyStem.number * 11) % weakestNumbers.length;
+            const number = weakestNumbers[randomSeed];
+            
+            if (!usedNumbers.has(number)) {
+                selectedNumbers.push(number);
+                usedNumbers.add(number);
+                numberReasons.push({
+                    number: number,
+                    element: weakestElement,
+                    reason: `오행 균형을 위한 ${getElementName(weakestElement)} 보강`
+                });
+            }
+        }
+        
+        // 무한 루프 방지
+        if (usedNumbers.size >= 45) break;
+    }
+    
+    return {
+        numbers: selectedNumbers.sort((a, b) => a - b),
+        reasons: numberReasons.sort((a, b) => a.number - b.number),
+        balance: calculateNumberBalance(selectedNumbers)
+    };
+}
+
+// 사주에서 선호 오행 추출
+function getFavorableElements(sajuResult) {
+    const favorable = [];
+    
+    if (sajuResult.yongSin.primary) {
+        favorable.push(sajuResult.yongSin.primary);
+    }
+    
+    if (sajuResult.yongSin.secondary && favorable.length < 3) {
+        favorable.push(sajuResult.yongSin.secondary);
+    }
+    
+    // 일간과 상생하는 오행 추가
+    const dayElement = sajuResult.dayPillar.heavenlyStem.element;
+    const generatedElement = ELEMENT_RELATIONS.generation[dayElement];
+    if (generatedElement && !favorable.includes(generatedElement)) {
+        favorable.push(generatedElement);
+    }
+    
+    return favorable;
+}
+
+// 오행 균형 분석
+function analyzeElementBalance(sajuResult) {
+    return sajuResult.elementAnalysis.total;
+}
+
+// 생년월일에서 의미있는 숫자 추출
+function extractBirthNumbers(birthDate) {
+    const year = birthDate.getFullYear();
+    const month = birthDate.getMonth() + 1;
+    const day = birthDate.getDate();
+    
+    const numbers = [];
+    
+    // 생년의 끝자리
+    const yearLastDigit = year % 100;
+    if (yearLastDigit <= 45 && yearLastDigit >= 1) numbers.push(yearLastDigit);
+    
+    // 생월
+    if (month <= 45) numbers.push(month);
+    
+    // 생일
+    if (day <= 45) numbers.push(day);
+    
+    // 년월일의 합
+    const sum = (year % 100) + month + day;
+    const finalSum = sum > 45 ? sum % 45 + 1 : sum;
+    if (finalSum >= 1 && finalSum <= 45) numbers.push(finalSum);
+    
+    return [...new Set(numbers)]; // 중복 제거
+}
+
+// 숫자에서 오행 추출
+function getNumberElement(number) {
+    const lastDigit = number % 10;
+    if (lastDigit === 1 || lastDigit === 6) return 'water';
+    if (lastDigit === 2 || lastDigit === 7) return 'fire';  
+    if (lastDigit === 3 || lastDigit === 8) return 'wood';
+    if (lastDigit === 4 || lastDigit === 9) return 'metal';
+    if (lastDigit === 5 || lastDigit === 0) return 'earth';
+    return 'earth'; // 기본값
+}
+
+// 가장 약한 오행 찾기
+function findWeakestElement(elementBalance) {
+    return Object.entries(elementBalance)
+        .sort((a, b) => a[1] - b[1])[0][0];
+}
+
+// 선택된 번호들의 오행 균형 계산
+function calculateNumberBalance(numbers) {
+    const balance = { wood: 0, fire: 0, earth: 0, metal: 0, water: 0 };
+    
+    numbers.forEach(number => {
+        const element = getNumberElement(number);
+        balance[element]++;
+    });
+    
+    return balance;
+}
+
+// 대운/세운 영향을 고려한 가중치 계산
+function calculateLuckInfluence(sajuResult) {
+    const currentYear = new Date().getFullYear();
+    const birthYear = sajuResult.birthInfo.originalDate.getFullYear();
+    const age = currentYear - birthYear + 1;
+    
+    // 현재 대운 (10년 주기)
+    const greatLuckCycle = Math.floor((age - 1) / 10);
+    
+    // 올해 세운
+    const yearlyLuck = (currentYear - 1984) % 60; // 갑자 기준
+    
+    return {
+        greatLuckCycle,
+        yearlyLuck,
+        ageInfluence: age % 12
+    };
+}
+
 // 전역 스코프에 함수 노출
 if (typeof window !== 'undefined') {
     window.calculateSaju = calculateSaju;
+    window.generateSajuBasedLottoNumbers = generateSajuBasedLottoNumbers;
+    window.ELEMENT_LOTTO_MAPPING = ELEMENT_LOTTO_MAPPING;
+    window.ELEMENT_COLORS = ELEMENT_COLORS;
 }

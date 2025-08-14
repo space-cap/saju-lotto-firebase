@@ -25,8 +25,8 @@ sajuForm.addEventListener('submit', async function(e) {
         // 사주 계산
         const sajuResult = calculateSaju(formData);
         
-        // 로또 번호 생성
-        const lottoNumbers = generateLottoNumbers(sajuResult);
+        // 로또 번호 생성 (새로운 사주 기반 알고리즘 사용)
+        const lottoNumbers = generateSajuBasedLottoNumbers(sajuResult);
         
         // 결과 표시
         displayResults(sajuResult, lottoNumbers);
@@ -96,76 +96,59 @@ function collectFormData() {
     };
 }
 
-// 로또 번호 생성 (사주 기반)
-function generateLottoNumbers(sajuResult) {
-    const numbers = [];
-    const usedNumbers = new Set();
+// 새로운 번호 생성 (다중 세트 지원)
+function generateMultipleLottoSets(sajuResult, setCount = 1) {
+    const sets = [];
     
-    // 사주 요소를 기반으로 시드 생성
-    let seed = sajuResult.yearPillar.heavenlyStem.number + 
-               sajuResult.monthPillar.heavenlyStem.number + 
-               sajuResult.dayPillar.heavenlyStem.number + 
-               sajuResult.timePillar.heavenlyStem.number +
-               sajuResult.yearPillar.earthlyBranch.number + 
-               sajuResult.monthPillar.earthlyBranch.number + 
-               sajuResult.dayPillar.earthlyBranch.number + 
-               sajuResult.timePillar.earthlyBranch.number;
-    
-    // 오행 요소 기반 보정
-    const elementWeights = getElementWeights(sajuResult);
-    
-    // 첫 번째 숫자: 년주 기반
-    numbers.push(generateNumberFromPillar(sajuResult.yearPillar, 1, 10));
-    
-    // 두 번째 숫자: 월주 기반
-    let secondNum = generateNumberFromPillar(sajuResult.monthPillar, 11, 20);
-    while (usedNumbers.has(secondNum)) {
-        secondNum = (secondNum % 45) + 1;
-    }
-    numbers.push(secondNum);
-    
-    // 세 번째 숫자: 일주 기반
-    let thirdNum = generateNumberFromPillar(sajuResult.dayPillar, 21, 30);
-    while (usedNumbers.has(thirdNum)) {
-        thirdNum = (thirdNum % 45) + 1;
-    }
-    numbers.push(thirdNum);
-    
-    // 네 번째 숫자: 시주 기반
-    let fourthNum = generateNumberFromPillar(sajuResult.timePillar, 31, 40);
-    while (usedNumbers.has(fourthNum)) {
-        fourthNum = (fourthNum % 45) + 1;
-    }
-    numbers.push(fourthNum);
-    
-    // 나머지 숫자들을 사주 기반으로 생성
-    numbers.forEach(num => usedNumbers.add(num));
-    
-    while (numbers.length < 6) {
-        seed = (seed * 16807) % 2147483647; // Linear congruential generator
-        let num = (seed % 45) + 1;
+    for (let i = 0; i < setCount; i++) {
+        // 각 세트마다 약간 다른 시드를 사용하여 변화 주기
+        const modifiedResult = JSON.parse(JSON.stringify(sajuResult));
+        modifiedResult.setIndex = i;
+        modifiedResult.timeOffset = i * 1000;
         
-        // 오행 가중치 적용
-        num = applyElementWeight(num, elementWeights);
-        
-        if (!usedNumbers.has(num)) {
-            numbers.push(num);
-            usedNumbers.add(num);
-        }
+        const lottoSet = generateSajuBasedLottoNumbers(modifiedResult);
+        sets.push({
+            setNumber: i + 1,
+            numbers: lottoSet.numbers,
+            reasons: lottoSet.reasons,
+            balance: lottoSet.balance
+        });
     }
     
-    // 보너스 번호 생성
-    seed = (seed * 16807) % 2147483647;
-    let bonusNumber = (seed % 45) + 1;
-    while (usedNumbers.has(bonusNumber)) {
-        bonusNumber = (bonusNumber % 45) + 1;
-    }
+    return sets;
+}
+
+// 오늘의 운세 가중치 계산
+function calculateDailyLuckWeight(sajuResult) {
+    const today = new Date();
+    const todayElement = getDayElement(today);
+    const dayCompatibility = calculateElementCompatibility(
+        sajuResult.dayPillar.heavenlyStem.element, 
+        todayElement
+    );
     
     return {
-        main: numbers.sort((a, b) => a - b),
-        bonus: bonusNumber,
-        explanation: generateExplanation(sajuResult, numbers)
+        todayElement,
+        compatibility: dayCompatibility,
+        weight: dayCompatibility > 0.5 ? 1.2 : 0.8
     };
+}
+
+// 날짜의 오행 계산
+function getDayElement(date) {
+    const dayOfYear = Math.floor((date - new Date(date.getFullYear(), 0, 0)) / 86400000);
+    const elements = ['wood', 'fire', 'earth', 'metal', 'water'];
+    return elements[dayOfYear % 5];
+}
+
+// 오행 상성 계산
+function calculateElementCompatibility(element1, element2) {
+    if (element1 === element2) return 1.0;
+    if (ELEMENT_RELATIONS.generation[element1] === element2) return 0.8;
+    if (ELEMENT_RELATIONS.generation[element2] === element1) return 0.7;
+    if (ELEMENT_RELATIONS.destruction[element1] === element2) return 0.3;
+    if (ELEMENT_RELATIONS.destruction[element2] === element1) return 0.2;
+    return 0.5; // 중성
 }
 
 // 기둥에서 숫자 생성
@@ -368,41 +351,202 @@ function generateInterpretationHTML(interpretation, yongSin) {
     `;
 }
 
-// 로또 번호 표시
+// 로또 번호 표시 (개선된 버전)
 function displayLottoNumbers(lottoNumbers) {
     const numberBalls = numbersDisplay.querySelector('.number-balls');
+    if (!numberBalls) return;
+    
     numberBalls.innerHTML = '';
     
-    // 메인 번호들
-    lottoNumbers.main.forEach((number, index) => {
+    // 메인 번호들 - 오행별 색상 적용
+    lottoNumbers.numbers.forEach((number, index) => {
         const ball = document.createElement('div');
         ball.className = 'number-ball';
         ball.textContent = number;
-        ball.style.animationDelay = `${index * 0.1}s`;
+        ball.style.animationDelay = `${index * 0.15}s`;
+        
+        // 오행별 색상 적용
+        const element = getNumberElement(number);
+        ball.style.backgroundColor = ELEMENT_COLORS[element];
+        ball.style.color = '#fff';
+        ball.setAttribute('data-element', element);
+        ball.setAttribute('data-element-name', getElementName(element));
+        
         numberBalls.appendChild(ball);
     });
     
-    // 보너스 번호
-    const bonusBall = document.createElement('div');
-    bonusBall.className = 'number-ball';
-    bonusBall.textContent = lottoNumbers.bonus;
-    bonusBall.style.animationDelay = '0.6s';
-    bonusBall.style.border = '3px solid #FFD700';
-    numberBalls.appendChild(bonusBall);
+    // 번호 설명 섹션 추가
+    displayNumberExplanations(lottoNumbers.reasons);
+    
+    // 오행 균형 차트 표시
+    displayElementBalance(lottoNumbers.balance);
+}
+
+// 번호별 설명 표시
+function displayNumberExplanations(reasons) {
+    let explanationHTML = '<div class="number-explanations"><h4>번호별 의미</h4>';
+    
+    reasons.forEach(reason => {
+        const elementName = getElementName(reason.element);
+        const elementColor = ELEMENT_COLORS[reason.element];
+        
+        explanationHTML += `
+            <div class="number-explanation-item">
+                <div class="explanation-number" style="background-color: ${elementColor};">${reason.number}</div>
+                <div class="explanation-text">
+                    <span class="explanation-element">${elementName}</span>
+                    <span class="explanation-reason">${reason.reason}</span>
+                </div>
+            </div>
+        `;
+    });
+    
+    explanationHTML += '</div>';
+    
+    // 설명을 기존 설명 텍스트 아래에 추가
+    const explanationContainer = document.querySelector('.numbers-explanation');
+    if (explanationContainer) {
+        explanationContainer.innerHTML += explanationHTML;
+    }
+}
+
+// 오행 균형 표시
+function displayElementBalance(balance) {
+    let balanceHTML = '<div class="element-balance-chart"><h4>번호의 오행 균형</h4>';
+    
+    Object.entries(balance).forEach(([element, count]) => {
+        if (count > 0) {
+            const elementName = getElementName(element);
+            const elementColor = ELEMENT_COLORS[element];
+            const percentage = (count / 6) * 100;
+            
+            balanceHTML += `
+                <div class="balance-item">
+                    <div class="balance-label">${elementName}</div>
+                    <div class="balance-bar">
+                        <div class="balance-fill" style="background-color: ${elementColor}; width: ${percentage}%"></div>
+                    </div>
+                    <div class="balance-count">${count}개</div>
+                </div>
+            `;
+        }
+    });
+    
+    balanceHTML += '</div>';
+    
+    const explanationContainer = document.querySelector('.numbers-explanation');
+    if (explanationContainer) {
+        explanationContainer.innerHTML += balanceHTML;
+    }
 }
 
 // 새로운 번호 생성
 function generateNewNumbers() {
-    const formData = collectFormData();
-    const sajuResult = calculateSaju(formData);
+    if (!validateForm()) return;
     
-    // 시드를 약간 변경하여 다른 번호 생성
-    const timestamp = Date.now();
-    sajuResult.randomSeed = timestamp;
+    showLoading();
     
-    const lottoNumbers = generateLottoNumbers(sajuResult);
-    displayLottoNumbers(lottoNumbers);
-    explanationText.textContent = lottoNumbers.explanation;
+    try {
+        const formData = collectFormData();
+        const sajuResult = calculateSaju(formData);
+        
+        // 시드를 약간 변경하여 다른 번호 생성
+        const timestamp = Date.now();
+        sajuResult.randomSeed = timestamp;
+        
+        const lottoNumbers = generateSajuBasedLottoNumbers(sajuResult);
+        displayLottoNumbers(lottoNumbers);
+        
+        // 전체 설명 업데이트
+        updateGeneralExplanation(sajuResult, lottoNumbers);
+        
+        hideLoading();
+    } catch (error) {
+        console.error('새로운 번호 생성 중 오류:', error);
+        alert('번호 생성 중 오류가 발생했습니다.');
+        hideLoading();
+    }
+}
+
+// 전체 설명 업데이트
+function updateGeneralExplanation(sajuResult, lottoNumbers) {
+    const dayElement = sajuResult.dayPillar.heavenlyStem.element;
+    const primaryElement = sajuResult.yongSin.primary;
+    
+    let explanation = `이 번호들은 당신의 일간 ${getElementName(dayElement)}과 용신 ${getElementName(primaryElement)}의 기운을 중심으로 `;
+    explanation += `사주팔자의 균형과 조화를 고려하여 선택되었습니다. `;
+    
+    // 오늘의 운세 추가
+    const dailyLuck = calculateDailyLuckWeight(sajuResult);
+    const todayElementName = getElementName(dailyLuck.todayElement);
+    
+    if (dailyLuck.compatibility > 0.6) {
+        explanation += `오늘은 ${todayElementName}의 날로 당신과 특히 좋은 상성을 보입니다. `;
+    } else if (dailyLuck.compatibility < 0.4) {
+        explanation += `오늘은 ${todayElementName}의 날로 신중한 접근이 필요할 수 있습니다. `;
+    }
+    
+    explanation += `각 번호는 사주의 깊은 의미를 담고 있어 당신만의 특별한 행운을 가져다 줄 것입니다.`;
+    
+    if (explanationText) {
+        explanationText.textContent = explanation;
+    }
+}
+
+// 다중 세트 생성 기능 추가
+function generateMultipleSets(setCount) {
+    if (!validateForm()) return;
+    
+    showLoading();
+    
+    try {
+        const formData = collectFormData();
+        const sajuResult = calculateSaju(formData);
+        const multipleSets = generateMultipleLottoSets(sajuResult, setCount);
+        
+        displayMultipleSets(multipleSets, sajuResult);
+        hideLoading();
+    } catch (error) {
+        console.error('다중 세트 생성 중 오류:', error);
+        alert('다중 세트 생성 중 오류가 발생했습니다.');
+        hideLoading();
+    }
+}
+
+// 다중 세트 표시
+function displayMultipleSets(sets, sajuResult) {
+    const numberBalls = numbersDisplay.querySelector('.number-balls');
+    if (!numberBalls) return;
+    
+    numberBalls.innerHTML = '';
+    
+    sets.forEach((set, setIndex) => {
+        const setContainer = document.createElement('div');
+        setContainer.className = 'lotto-set';
+        setContainer.innerHTML = `<h4>${set.setNumber}번째 세트</h4>`;
+        
+        const ballsContainer = document.createElement('div');
+        ballsContainer.className = 'set-balls';
+        
+        set.numbers.forEach((number, index) => {
+            const ball = document.createElement('div');
+            ball.className = 'number-ball small';
+            ball.textContent = number;
+            ball.style.animationDelay = `${(setIndex * 6 + index) * 0.1}s`;
+            
+            const element = getNumberElement(number);
+            ball.style.backgroundColor = ELEMENT_COLORS[element];
+            ball.style.color = '#fff';
+            
+            ballsContainer.appendChild(ball);
+        });
+        
+        setContainer.appendChild(ballsContainer);
+        numberBalls.appendChild(setContainer);
+    });
+    
+    // 전체 설명 업데이트
+    updateGeneralExplanation(sajuResult, sets[0]);
 }
 
 // 로딩 표시/숨기기
@@ -448,8 +592,187 @@ function addBasicLuckInfo(sajuResult) {
     }
 }
 
+// 번호 저장 기능 (Firebase 통합)
+async function saveNumbers() {
+    const numberBalls = document.querySelectorAll('.number-ball:not(.small)');
+    if (numberBalls.length === 0) {
+        alert('저장할 번호가 없습니다. 먼저 번호를 생성해주세요.');
+        return;
+    }
+    
+    // 로그인 체크
+    const currentUser = window.firebaseAuth?.getCurrentUser();
+    if (!currentUser) {
+        if (confirm('번호를 저장하려면 로그인이 필요합니다. 로그인하시겠습니까?')) {
+            showLoginModal();
+        }
+        return;
+    }
+    
+    try {
+        // 번호 수집
+        const numbers = Array.from(numberBalls).map(ball => parseInt(ball.textContent)).sort((a, b) => a - b);
+        const formData = collectFormData();
+        
+        const saveData = {
+            numbers: numbers,
+            timestamp: new Date().toLocaleString('ko-KR'),
+            birthInfo: {
+                birthDate: formData.birthDate.toLocaleDateString('ko-KR'),
+                calendarType: formData.calendarType === 'solar' ? '양력' : '음력',
+                birthTime: document.getElementById('birth-time').selectedOptions[0]?.textContent.split(' - ')[0] || '',
+                gender: formData.gender === 'male' ? '남성' : '여성'
+            },
+            explanation: explanationText ? explanationText.textContent : ''
+        };
+        
+        // Firebase에 저장
+        const result = await window.firebaseAuth.saveLottoNumbers(saveData);
+        
+        if (result.success) {
+            // 사주 프로필도 함께 저장
+            try {
+                const sajuProfileData = {
+                    birthDate: saveData.birthInfo.birthDate,
+                    calendarType: saveData.birthInfo.calendarType,
+                    birthTime: saveData.birthInfo.birthTime,
+                    gender: saveData.birthInfo.gender,
+                    savedAt: new Date().toISOString()
+                };
+                await window.firebaseAuth.saveSajuProfile(sajuProfileData);
+            } catch (profileError) {
+                console.error('사주 프로필 저장 실패:', profileError);
+            }
+            
+            // 로컬 스토리지에도 백업 저장
+            let savedNumbers = JSON.parse(localStorage.getItem('sajuLottoNumbers') || '[]');
+            savedNumbers.unshift(saveData);
+            if (savedNumbers.length > 20) {
+                savedNumbers = savedNumbers.slice(0, 20);
+            }
+            localStorage.setItem('sajuLottoNumbers', JSON.stringify(savedNumbers));
+            
+            showSaveConfirmation();
+        }
+        
+    } catch (error) {
+        console.error('번호 저장 실패:', error);
+        alert('번호 저장에 실패했습니다. 다시 시도해주세요.');
+    }
+}
+
+// 저장 완료 알림
+function showSaveConfirmation() {
+    const confirmation = document.createElement('div');
+    confirmation.className = 'save-confirmation';
+    confirmation.innerHTML = `
+        <div class="save-message">
+            <span class="save-icon">✓</span>
+            번호가 저장되었습니다!
+        </div>
+    `;
+    
+    document.body.appendChild(confirmation);
+    
+    // 3초 후 자동 제거
+    setTimeout(() => {
+        confirmation.remove();
+    }, 3000);
+    
+    // 저장된 번호 보기 버튼 추가 (한 번만)
+    if (!document.querySelector('.view-saved-btn')) {
+        const viewSavedBtn = document.createElement('button');
+        viewSavedBtn.className = 'view-saved-btn';
+        viewSavedBtn.textContent = '저장된 번호 보기';
+        viewSavedBtn.onclick = showSavedNumbers;
+        
+        const actionButtons = document.querySelector('.action-buttons');
+        if (actionButtons) {
+            actionButtons.appendChild(viewSavedBtn);
+        }
+    }
+}
+
+// 저장된 번호들 보기
+function showSavedNumbers() {
+    const savedNumbers = JSON.parse(localStorage.getItem('sajuLottoNumbers') || '[]');
+    
+    if (savedNumbers.length === 0) {
+        alert('저장된 번호가 없습니다.');
+        return;
+    }
+    
+    let modalHTML = `
+        <div class="saved-numbers-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>저장된 로또 번호 (${savedNumbers.length}개)</h3>
+                    <button class="modal-close" onclick="closeSavedNumbersModal()">&times;</button>
+                </div>
+                <div class="saved-numbers-list">
+    `;
+    
+    savedNumbers.forEach((data, index) => {
+        modalHTML += `
+            <div class="saved-number-item">
+                <div class="saved-header">
+                    <span class="save-date">${data.timestamp}</span>
+                    <button class="delete-saved" onclick="deleteSavedNumber(${index})">&times;</button>
+                </div>
+                <div class="saved-numbers">
+                    ${data.numbers.map(num => `<span class="mini-ball">${num}</span>`).join('')}
+                </div>
+                <div class="saved-info">
+                    <small>${data.birthInfo.birthDate} (${data.birthInfo.calendarType}) / ${data.birthInfo.birthTime} / ${data.birthInfo.gender}</small>
+                </div>
+            </div>
+        `;
+    });
+    
+    modalHTML += `
+                </div>
+                <div class="modal-footer">
+                    <button class="clear-all-btn" onclick="clearAllSavedNumbers()">전체 삭제</button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+}
+
+// 저장된 번호 모달 닫기
+function closeSavedNumbersModal() {
+    const modal = document.querySelector('.saved-numbers-modal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+// 특정 저장된 번호 삭제
+function deleteSavedNumber(index) {
+    if (confirm('이 번호를 삭제하시겠습니까?')) {
+        let savedNumbers = JSON.parse(localStorage.getItem('sajuLottoNumbers') || '[]');
+        savedNumbers.splice(index, 1);
+        localStorage.setItem('sajuLottoNumbers', JSON.stringify(savedNumbers));
+        
+        // 모달 다시 열기
+        closeSavedNumbersModal();
+        showSavedNumbers();
+    }
+}
+
+// 전체 저장된 번호 삭제
+function clearAllSavedNumbers() {
+    if (confirm('모든 저장된 번호를 삭제하시겠습니까?')) {
+        localStorage.removeItem('sajuLottoNumbers');
+        closeSavedNumbersModal();
+        alert('모든 번호가 삭제되었습니다.');
+    }
+}
+
 // 페이지 로드 시 초기화
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
     // 오늘 날짜를 기본값으로 설정 (30년 전)
     const today = new Date();
     const defaultDate = new Date(today.getFullYear() - 30, today.getMonth(), today.getDate());
@@ -458,5 +781,74 @@ document.addEventListener('DOMContentLoaded', function() {
     // 양력을 기본값으로 설정
     document.querySelector('input[name="calendar-type"][value="solar"]').checked = true;
     
+    // Firebase 인증 상태 체크 후 사주 프로필 로드
+    setTimeout(async () => {
+        try {
+            const currentUser = window.firebaseAuth?.getCurrentUser();
+            if (currentUser) {
+                await loadSajuProfileIfExists();
+            }
+        } catch (error) {
+            console.error('사주 프로필 로드 실패:', error);
+        }
+        
+        // 로컬 저장된 번호가 있으면 버튼 표시
+        const savedNumbers = JSON.parse(localStorage.getItem('sajuLottoNumbers') || '[]');
+        if (savedNumbers.length > 0) {
+            const viewSavedBtn = document.createElement('button');
+            viewSavedBtn.className = 'view-saved-btn';
+            viewSavedBtn.textContent = '저장된 번호 보기 (로컬)';
+            viewSavedBtn.onclick = showSavedNumbers;
+            
+            const actionButtons = document.querySelector('.action-buttons');
+            if (actionButtons && !document.querySelector('.view-saved-btn')) {
+                actionButtons.appendChild(viewSavedBtn);
+            }
+        }
+    }, 1000);
+    
     console.log('사주 로또 번호 생성기가 준비되었습니다.');
 });
+
+// 저장된 사주 프로필이 있으면 폼에 자동 입력
+async function loadSajuProfileIfExists() {
+    try {
+        const sajuProfile = await window.firebaseAuth.getSajuProfile();
+        if (sajuProfile) {
+            // 생년월일 설정
+            if (sajuProfile.birthDate) {
+                const dateInput = document.getElementById('birth-date');
+                const dateParts = sajuProfile.birthDate.split('.');
+                if (dateParts.length === 3) {
+                    const year = dateParts[0].trim();
+                    const month = dateParts[1].trim().padStart(2, '0');
+                    const day = dateParts[2].trim().padStart(2, '0');
+                    dateInput.value = `${year}-${month}-${day}`;
+                }
+            }
+            
+            // 성별 설정
+            if (sajuProfile.gender) {
+                const genderValue = sajuProfile.gender === '남성' ? 'male' : 'female';
+                const genderInput = document.querySelector(`input[name="gender"][value="${genderValue}"]`);
+                if (genderInput) {
+                    genderInput.checked = true;
+                }
+            }
+            
+            // 달력 타입 설정
+            if (sajuProfile.calendarType) {
+                const calendarValue = sajuProfile.calendarType === '양력' ? 'solar' : 'lunar';
+                const calendarInput = document.querySelector(`input[name="calendar-type"][value="${calendarValue}"]`);
+                if (calendarInput) {
+                    calendarInput.checked = true;
+                }
+            }
+            
+            console.log('사주 프로필 자동 로드 완료');
+            showSuccessMessage('저장된 사주 정보를 불러왔습니다!');
+        }
+    } catch (error) {
+        console.error('사주 프로필 로드 오류:', error);
+    }
+}

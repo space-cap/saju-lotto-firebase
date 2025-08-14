@@ -18,6 +18,22 @@
             <div class="bagua-decoration"></div>
         </header>
 
+        <!-- 사용자 인증 섹션 -->
+        <div class="auth-section">
+            <div class="login-section">
+                <button class="auth-toggle-btn" onclick="showLoginModal()">
+                    <span class="auth-icon">👤</span>
+                    로그인 / 회원가입
+                </button>
+            </div>
+            <div class="user-section" style="display: none;">
+                <div class="user-info">
+                    <span class="user-email"></span>
+                    <button class="logout-btn" onclick="handleLogout()">로그아웃</button>
+                </div>
+            </div>
+        </div>
+
         <!-- 메인 컨텐츠 -->
         <main class="main-content">
             <!-- 사주 입력 영역 -->
@@ -109,9 +125,22 @@
                             <p id="explanation-text"></p>
                         </div>
                     </div>
-                    <button type="button" class="regenerate-btn" onclick="generateNewNumbers()">
-                        새로운 번호 생성
-                    </button>
+                    <div class="action-buttons">
+                        <button type="button" class="regenerate-btn" onclick="generateNewNumbers()">
+                            새로운 번호 생성
+                        </button>
+                        <div class="multiple-sets">
+                            <button type="button" class="multiple-btn" onclick="generateMultipleSets(3)">
+                                3세트 생성
+                            </button>
+                            <button type="button" class="multiple-btn" onclick="generateMultipleSets(5)">
+                                5세트 생성
+                            </button>
+                        </div>
+                        <button type="button" class="save-btn" onclick="saveNumbers()">
+                            번호 저장하기
+                        </button>
+                    </div>
                 </div>
             </section>
         </main>
@@ -123,6 +152,52 @@
         </footer>
     </div>
 
+    <!-- 로그인 모달 -->
+    <div id="login-modal" class="modal-overlay hidden">
+        <div class="modal-content auth-modal">
+            <div class="modal-header">
+                <h3 id="auth-modal-title">로그인</h3>
+                <button class="modal-close" onclick="closeLoginModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="auth-tabs">
+                    <button class="auth-tab active" onclick="switchAuthTab('login')">로그인</button>
+                    <button class="auth-tab" onclick="switchAuthTab('signup')">회원가입</button>
+                </div>
+                
+                <form id="auth-form" class="auth-form">
+                    <div class="form-group">
+                        <label for="auth-email" class="form-label">이메일</label>
+                        <input type="email" id="auth-email" required class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label for="auth-password" class="form-label">비밀번호</label>
+                        <input type="password" id="auth-password" required class="form-input">
+                    </div>
+                    <div id="confirm-password-group" class="form-group hidden">
+                        <label for="auth-password-confirm" class="form-label">비밀번호 확인</label>
+                        <input type="password" id="auth-password-confirm" class="form-input">
+                    </div>
+                    
+                    <button type="submit" id="auth-submit-btn" class="auth-submit-btn">
+                        로그인
+                    </button>
+                </form>
+                
+                <div class="auth-divider">
+                    <span>또는</span>
+                </div>
+                
+                <button class="google-login-btn" onclick="handleGoogleLogin()">
+                    <span class="google-icon">🔍</span>
+                    Google로 로그인
+                </button>
+                
+                <div id="auth-error" class="auth-error hidden"></div>
+            </div>
+        </div>
+    </div>
+
     <!-- 로딩 오버레이 -->
     <div id="loading-overlay" class="loading-overlay hidden">
         <div class="loading-content">
@@ -131,7 +206,9 @@
         </div>
     </div>
 
+    <script type="module" src="firebase-config.js"></script>
     <script src="saju-engine.js"></script>
     <script src="script.js"></script>
+    <script src="auth-handler.js"></script>
 </body>
 </html>
