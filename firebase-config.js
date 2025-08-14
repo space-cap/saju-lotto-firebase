@@ -219,7 +219,7 @@ async function saveLottoNumbers(numbersData) {
   }
   
   try {
-    const lottoCollection = collection(db, 'users', currentUser.uid, 'lottoNumbers');
+    const lottoCollection = db.collection('users').doc(currentUser.uid).collection('lottoNumbers');
     const docRef = await lottoCollection.add({
       ...numbersData,
       userId: currentUser.uid,
@@ -241,7 +241,7 @@ async function getSavedLottoNumbers() {
   }
   
   try {
-    const lottoCollection = collection(db, 'users', currentUser.uid, 'lottoNumbers');
+    const lottoCollection = db.collection('users').doc(currentUser.uid).collection('lottoNumbers');
     const q = lottoCollection.orderBy('createdAt', 'desc');
     const querySnapshot = await q.get();
     
