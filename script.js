@@ -36,6 +36,9 @@ sajuForm.addEventListener('submit', async function(e) {
         // 사주 계산
         const sajuResult = calculateSaju(formData);
         
+        // 시드를 추가하여 매번 다른 번호 생성
+        sajuResult.randomSeed = Date.now();
+        
         // 로또 번호 생성 (새로운 사주 기반 알고리즘 사용)
         const lottoNumbers = generateSajuBasedLottoNumbers(sajuResult);
         
