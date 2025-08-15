@@ -58,6 +58,11 @@ class NotificationManager {
   }
 
   scheduleDailyFortuneCheck() {
+    if (!this.settings || !this.settings.time) {
+      console.warn('설정이 로드되지 않음. 기본 시간 사용');
+      return;
+    }
+    
     const now = new Date();
     const [hour, minute] = this.settings.time.split(':').map(Number);
     const notificationTime = new Date(now);

@@ -362,6 +362,7 @@ class OfflineCache {
         return;
       }
       
+      try {
         const transaction = this.db.transaction([storeName], 'readonly');
         const store = transaction.objectStore(storeName);
         const request = store.get(key);

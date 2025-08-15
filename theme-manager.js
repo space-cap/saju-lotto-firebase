@@ -635,10 +635,16 @@ document.addEventListener('DOMContentLoaded', () => {
   // 기존 스타일시트에 CSS 변수 사용하도록 업데이트
   const existingStyles = document.querySelectorAll('style, link[rel="stylesheet"]');
   existingStyles.forEach(styleElement => {
-    if (styleElement.sheet && styleElement.sheet.cssRules) {
-      // CSS 규칙을 순회하며 색상 값을 CSS 변수로 교체
-      // 이는 런타임에서 동적으로 처리하기 어려우므로, 
-      // 대신 주요 요소들에 CSS 변수 적용 클래스를 추가
+    try {
+      // 동일 도메인의 스타일시트만 접근 가능
+      if (styleElement.sheet && styleElement.sheet.cssRules) {
+        // CSS 규칙을 순회하며 색상 값을 CSS 변수로 교체
+        // 이는 런타임에서 동적으로 처리하기 어려우므로, 
+        // 대신 주요 요소들에 CSS 변수 적용 클래스를 추가
+      }
+    } catch (error) {
+      // CORS 오류나 외부 스타일시트 접근 실패 시 무시
+      console.debug('스타일시트 접근 제한:', error.message);
     }
   });
   

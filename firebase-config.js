@@ -22,7 +22,7 @@ let messaging = null;
 // FCM 초기화 (지원되는 경우에만)
 if (typeof window !== 'undefined' && 'serviceWorker' in navigator && firebase.messaging.isSupported()) {
   messaging = firebase.messaging();
-  initializeMessaging();
+  // initializeMessaging()은 사용자 제스처에서 호출됨
 }
 
 // Google 인증 제공자 설정
@@ -908,15 +908,14 @@ window.firebaseAuth = {
 // Firebase Cloud Messaging 기능
 // =================================
 
-// FCM 초기화
+// FCM 초기화 (사용자 제스처에서만 호출)
 async function initializeMessaging() {
   if (!messaging) return;
 
   try {
-    // 알림 권한 요청
-    const permission = await Notification.requestPermission();
-    if (permission !== 'granted') {
-      console.log('알림 권한이 거부되었습니다.');
+    // 알림 권한이 이미 허용된 경우에만 진행
+    if (Notification.permission !== 'granted') {
+      console.log('알림 권한이 필요합니다. 설정에서 활성화해주세요.');
       return;
     }
 
@@ -1199,16 +1198,43 @@ async function requestNotificationPermission() {
   }
 }
 
+// 사용자 제스처에서 알림 권한 요청
+async function requestNotificationPermission() {
+  if (!('Notification' in window)) {
+    return { granted: false, error: '브라우저가 알림을 지원하지 않습니다.' };
+  }
+
+  if (Notification.permission === 'granted') {
+    await initializeMessaging();
+    return { granted: true };
+  }
+
+  try {
+    const permission = await Notification.requestPermission();
+    if (permission === 'granted') {
+      await initializeMessaging();
+      return { granted: true };
+    } else {
+      return { granted: false, error: '알림 권한이 거부되었습니다.' };
+    }
+  } catch (error) {
+    return { granted: false, error: error.message };
+  }
+}
+
 // 테스트 알림 발송
-function sendTestNotification() {
+async function sendTestNotification() {
   if (!('Notification' in window)) {
     alert('브라우저가 알림을 지원하지 않습니다.');
     return;
   }
 
   if (Notification.permission !== 'granted') {
-    alert('알림 권한이 필요합니다.');
-    return;
+    const result = await requestNotificationPermission();
+    if (!result.granted) {
+      alert(result.error || '알림 권한이 필요합니다.');
+      return;
+    }
   }
 
   showCustomNotification({
