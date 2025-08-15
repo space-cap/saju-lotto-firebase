@@ -3262,7 +3262,7 @@ body {
     }
     
     .element-bar {
-        grid-template-columns: 60px 1fr 45px;
+        grid-template-columns: 80px 1fr 50px;
         gap: 10px;
     }
 }
