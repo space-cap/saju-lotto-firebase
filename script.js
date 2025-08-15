@@ -1349,6 +1349,10 @@ async function initializeFortuneDashboard() {
         const lastSaved = localStorage.getItem('lastFortuneSaved');
         
         if (lastSaved !== today) {
+            // Firebase가 로드될 때까지 잠시 대기
+            if (!firebase || !firebase.firestore || !firebase.firestore.FieldValue) {
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
             await saveUserFortunePattern(currentFortune, currentFortune.overallFortune.recommendation);
             localStorage.setItem('lastFortuneSaved', today);
         }

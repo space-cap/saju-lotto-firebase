@@ -689,6 +689,11 @@ async function saveUserFortunePattern(fortuneData, recommendation) {
     throw new Error('로그인이 필요합니다.');
   }
   
+  // Firebase가 완전히 로드되었는지 확인
+  if (!firebase || !firebase.firestore || !firebase.firestore.FieldValue) {
+    throw new Error('Firebase가 아직 로드되지 않았습니다.');
+  }
+  
   try {
     const fortunePattern = {
       date: new Date().toISOString().split('T')[0],
