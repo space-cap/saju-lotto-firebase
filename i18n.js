@@ -1067,6 +1067,7 @@ document.addEventListener('DOMContentLoaded', () => {
     { selector: '.auth-toggle-btn', key: 'auth.login' },
     { selector: '.logout-btn', key: 'auth.logout' },
     { selector: 'button[onclick="generateSajuNumbers()"]', key: 'form.birth.generate' },
+    { selector: '.generate-btn .btn-text', key: 'form.birth.generate' },
     { selector: 'button[onclick="saveLottoNumbers()"]', key: 'lotto.save' }
   ];
 
