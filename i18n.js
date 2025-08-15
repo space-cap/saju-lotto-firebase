@@ -837,7 +837,7 @@ class InternationalizationManager {
     // 버튼 텍스트 번역
     const buttons = document.querySelectorAll('button:not([data-i18n])');
     buttons.forEach(button => {
-      if (button.textContent.includes('생성') || button.textContent.includes('Generate')) {
+      if (button.textContent === '번호 생성하기' || button.textContent.includes('Generate Numbers')) {
         button.textContent = this.t('form.birth.generate');
       }
       if (button.textContent.includes('저장') || button.textContent.includes('Save')) {
