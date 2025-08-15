@@ -711,7 +711,7 @@ async function saveUserFortunePattern(fortuneData, recommendation) {
       },
       solarTerm: fortuneData.solarTerm.current ? fortuneData.solarTerm.current.name : null,
       recommendation: recommendation,
-      timestamp: serverTimestamp()
+      timestamp: firebase.firestore.FieldValue.serverTimestamp()
     };
     
     const docRef = await db.collection('users').doc(currentUser.uid).collection('fortunePatterns').add(fortunePattern);
@@ -739,7 +739,7 @@ async function saveFortuneNumberResult(numbers, fortuneData, actualResult = null
       },
       generationDate: new Date().toISOString().split('T')[0],
       actualResult: actualResult, // 실제 당첨 결과 (나중에 업데이트)
-      timestamp: serverTimestamp()
+      timestamp: firebase.firestore.FieldValue.serverTimestamp()
     };
     
     const docRef = await db.collection('users').doc(currentUser.uid).collection('fortuneNumberResults').add(result);
