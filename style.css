@@ -3262,7 +3262,14 @@ body {
     }
     
     .element-bar {
-        grid-template-columns: 80px 1fr 50px;
-        gap: 10px;
+        grid-template-columns: 90px 1fr 50px;
+        gap: 8px;
+    }
+    
+    .element-name {
+        font-size: 0.9em;
+        font-weight: bold;
+        white-space: nowrap;
+        overflow: visible;
     }
 }
