@@ -3,15 +3,22 @@ const STATIC_CACHE_NAME = 'saju-lotto-static-v1';
 const DYNAMIC_CACHE_NAME = 'saju-lotto-dynamic-v1';
 
 const STATIC_FILES = [
-  '/',
-  '/index.html',
-  '/script.js',
-  '/saju-engine.js',
-  '/firebase-config.js',
-  '/auth-handler.js',
-  '/style.css',
-  '/manifest.json',
-  '/offline.html'
+  '/saju-lotto-firebase/',
+  '/saju-lotto-firebase/index.html',
+  '/saju-lotto-firebase/script.js',
+  '/saju-lotto-firebase/saju-engine.js',
+  '/saju-lotto-firebase/firebase-config.js',
+  '/saju-lotto-firebase/auth-handler.js',
+  '/saju-lotto-firebase/notification-manager.js',
+  '/saju-lotto-firebase/theme-manager.js',
+  '/saju-lotto-firebase/app-shortcuts.js',
+  '/saju-lotto-firebase/i18n.js',
+  '/saju-lotto-firebase/analytics.js',
+  '/saju-lotto-firebase/accessibility.js',
+  '/saju-lotto-firebase/offline-cache.js',
+  '/saju-lotto-firebase/style.css',
+  '/saju-lotto-firebase/manifest.json',
+  '/saju-lotto-firebase/offline.html'
 ];
 
 const DYNAMIC_CACHE_LIMIT = 15;
